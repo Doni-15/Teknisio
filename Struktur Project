@@ -1,0 +1,163 @@
+home-service-project/
+├── README.md
+├── .gitignore
+├── docs/
+│   ├── proposal/
+│   │   └── proposal-uas.pdf
+│   ├── diagrams/
+│   │   ├── usecase.png
+│   │   ├── erd.png
+│   │   ├── flowchart.png
+│   │   └── architecture.png
+│   ├── presentation/
+│   │   └── slide.pptx
+│   └── screenshots/
+│       ├── mobile-home.png
+│       └── mobile-booking.png
+│
+├── database/
+│   ├── schema.sql
+│   ├── seed.sql
+│   ├── migration/
+│   │   ├── V1__create_tables.sql
+│   │   └── V2__insert_seed.sql
+│   └── backup/
+│
+├── mobile-app/
+│   ├── build.gradle
+│   ├── settings.gradle
+│   ├── gradle.properties
+│   ├── gradlew
+│   ├── gradlew.bat
+│   ├── gradle/
+│   └── app/
+│       ├── build.gradle
+│       ├── proguard-rules.pro
+│       └── src/
+│           ├── main/
+│           │   ├── AndroidManifest.xml
+│           │   ├── java/com/homeservice/app/
+│           │   │   ├── ui/
+│           │   │   │   ├── splash/
+│           │   │   │   │   └── SplashActivity.java
+│           │   │   │   ├── auth/
+│           │   │   │   │   ├── LoginActivity.java
+│           │   │   │   │   └── RegisterActivity.java
+│           │   │   │   ├── home/
+│           │   │   │   │   └── HomeActivity.java
+│           │   │   │   ├── booking/
+│           │   │   │   │   ├── BookingActivity.java
+│           │   │   │   │   └── BookingHistoryActivity.java
+│           │   │   │   ├── chat/
+│           │   │   │   │   └── ChatActivity.java
+│           │   │   │   ├── profile/
+│           │   │   │   │   └── ProfileActivity.java
+│           │   │   │   └── technician/
+│           │   │   │       └── TechnicianDashboardActivity.java
+│           │   │   │
+│           │   │   ├── viewmodel/
+│           │   │   │   ├── AuthViewModel.java
+│           │   │   │   ├── BookingViewModel.java
+│           │   │   │   └── ChatViewModel.java
+│           │   │   │
+│           │   │   ├── repository/
+│           │   │   │   ├── AuthRepository.java
+│           │   │   │   ├── BookingRepository.java
+│           │   │   │   └── ChatRepository.java
+│           │   │   │
+│           │   │   ├── network/
+│           │   │   │   ├── ApiClient.java
+│           │   │   │   ├── ApiService.java
+│           │   │   │   └── RetrofitInstance.java
+│           │   │   │
+│           │   │   ├── model/
+│           │   │   │   ├── User.java
+│           │   │   │   ├── Booking.java
+│           │   │   │   ├── ServiceItem.java
+│           │   │   │   ├── ChatMessage.java
+│           │   │   │   └── Technician.java
+│           │   │   │
+│           │   │   ├── adapter/
+│           │   │   │   ├── ServiceAdapter.java
+│           │   │   │   ├── BookingAdapter.java
+│           │   │   │   └── ChatAdapter.java
+│           │   │   │
+│           │   │   └── utils/
+│           │   │       ├── Constants.java
+│           │   │       ├── SessionManager.java
+│           │   │       └── Validator.java
+│           │   │
+│           │   └── res/
+│           │       ├── layout/
+│           │       ├── drawable/
+│           │       ├── mipmap/
+│           │       ├── values/
+│           │       └── navigation/
+│           │
+│           ├── androidTest/
+│           └── test/
+│
+├── backend-api/
+│   ├── pom.xml
+│   ├── mvnw
+│   ├── mvnw.cmd
+│   ├── .env.example
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/homeservice/api/
+│       │   │   ├── HomeServiceApplication.java
+│       │   │   │
+│       │   │   ├── config/
+│       │   │   │   ├── CorsConfig.java
+│       │   │   │   └── SecurityConfig.java
+│       │   │   │
+│       │   │   ├── controller/
+│       │   │   │   ├── AuthController.java
+│       │   │   │   ├── UserController.java
+│       │   │   │   ├── BookingController.java
+│       │   │   │   ├── ChatController.java
+│       │   │   │   └── TechnicianController.java
+│       │   │   │
+│       │   │   ├── service/
+│       │   │   │   ├── AuthService.java
+│       │   │   │   ├── BookingService.java
+│       │   │   │   ├── ChatService.java
+│       │   │   │   └── UserService.java
+│       │   │   │
+│       │   │   ├── repository/
+│       │   │   │   ├── UserRepository.java
+│       │   │   │   ├── BookingRepository.java
+│       │   │   │   ├── ChatRepository.java
+│       │   │   │   └── TechnicianRepository.java
+│       │   │   │
+│       │   │   ├── model/
+│       │   │   │   ├── User.java
+│       │   │   │   ├── Booking.java
+│       │   │   │   ├── ChatMessage.java
+│       │   │   │   ├── Technician.java
+│       │   │   │   └── ServiceCategory.java
+│       │   │   │
+│       │   │   ├── dto/
+│       │   │   │   ├── request/
+│       │   │   │   └── response/
+│       │   │   │
+│       │   │   ├── exception/
+│       │   │   │   ├── GlobalExceptionHandler.java
+│       │   │   │   └── ResourceNotFoundException.java
+│       │   │   │
+│       │   │   ├── security/
+│       │   │   │   ├── JwtFilter.java
+│       │   │   │   └── JwtUtil.java
+│       │   │   │
+│       │   │   └── utils/
+│       │   │       └── MapperUtil.java
+│       │   │
+│       │   └── resources/
+│       │       ├── application.properties
+│       │       └── application-dev.properties
+│       │
+│       └── test/
+│
+└── .github/
+    └── workflows/
+        └── ci.yml
