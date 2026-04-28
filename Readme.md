@@ -136,7 +136,9 @@ database/seed.sql
 ## 🎥 Video Presentasi
 
 Link Video: 
+```text
 (isi nanti Google Drive / YouTube)
+```
 
 ---
 
