@@ -130,20 +130,6 @@ Hasil ditampilkan ke user
 
 ---
 
-# Kenapa Tidak Langsung View ke Database?
-
-Kalau View langsung akses database:
-
-* Kode jadi berantakan
-* Susah maintenance
-* Sulit testing
-* Logic bercampur dengan UI
-* Tidak scalable untuk tim besar
-
-MVVM memisahkan tanggung jawab setiap bagian.
-
----
-
 # Pembagian Tugas Tim
 
 ## Frontend Mobile
@@ -170,53 +156,3 @@ Fokus di:
 * Repository
 * API
 * Database
-
----
-
-# Contoh Struktur Folder
-
-```text
-teknisio/
-│
-├── teknisio_view/
-│   ├── login/
-│   ├── dashboard/
-│
-├── teknisio_viewmodel/
-│   ├── LoginViewModel
-│   ├── DashboardViewModel
-│
-├── teknisio_model/
-│   ├── repository/
-│   ├── service/
-│   ├── entity/
-│
-├── teknisio_database/
-│   ├── AppDatabase
-│   ├── UserDao
-│
-└── utils/
-```
-
----
-
-# Kesimpulan
-
-Dalam MVVM:
-
-```text
-View → ViewModel → Model → Database
-```
-
-* View hanya mengatur tampilan
-* ViewModel menjadi penghubung
-* Model mengatur data dan business logic
-* Database menyimpan data aplikasi
-
-Dengan MVVM:
-
-* kode lebih bersih
-* mudah dikembangkan
-* mudah testing
-* cocok untuk kerja tim
-* scalable untuk project besar
