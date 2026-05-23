@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: teknisio-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/teknisio_db
+    username: teknisio_user
+    password: teknisio_pass
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  security:
+    user:
+      name: admin
+      password: admin
+
+server:
+  port: 8080
