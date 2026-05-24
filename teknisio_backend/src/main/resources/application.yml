@@ -9,19 +9,11 @@ spring:
 
   jpa:
     hibernate:
-      # Hibernate otomatis buat tabel dari model Java
-      # Uncomment/Comment this
-      # ddl-auto: update
-
-      # Hibernate manual buat tabel
-      # Uncomment/Comment this
       ddl-auto: validate
     show-sql: true
 
-  security:
-    user:
-      name: admin
-      password: admin
+  flyway:
+    enabled: true
 
 server:
   port: 8080
