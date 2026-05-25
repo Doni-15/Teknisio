@@ -32,7 +32,7 @@ CREATE TABLE teknisi_profile (
   id_teknisi_profile    UUID PRIMARY KEY DEFAULT gen_random_uuid (),
 
   id_user               UUID NOT NULL UNIQUE,
-  spesialisasi          VARCHAR(100),
+  spesialisasi          TEKNISI_SPESIALISASI NOT NULL,
   status_ketersediaan   TEKNISI_STATUS NOT NULL DEFAULT 'OFFLINE',
   rating_avg            DECIMAL(3, 2) NOT NULL DEFAULT 0 CHECK (rating_avg >= 0),
   rating_count          INTEGER NOT NULL DEFAULT 0 CHECK (rating_count >= 0),
@@ -82,7 +82,7 @@ CREATE TABLE permintaan_layanan (
   id_permintaan           UUID PRIMARY KEY DEFAULT gen_random_uuid (),
   kode_permintaan         VARCHAR(50) NOT NULL UNIQUE,
   id_pengguna             UUID NOT NULL,
-  id_teknisi              UUID,
+  id_teknisi              UUID NOT NULL,
   id_layanan              UUID NOT NULL,
 
   latitude                DECIMAL(10, 7) NOT NULL,
