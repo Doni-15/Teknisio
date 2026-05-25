@@ -202,7 +202,7 @@ CREATE TABLE log_aktivitas (
 
 -- MEDIA PERMINTAAN
 CREATE TABLE media_permintaan (
-  id_media                PRIMARY KEY DEFAULT gen_random_uuid (),
+  id_media                UUID PRIMARY KEY DEFAULT gen_random_uuid (),
   id_permintaan           UUID NOT NULL,
   url_file                TEXT NOT NULL,
   tipe_file               VARCHAR(50),
