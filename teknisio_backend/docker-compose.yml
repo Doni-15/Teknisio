@@ -2,17 +2,12 @@ services:
   postgres:
     image: postgres:16
     container_name: teknisio_db
-    environment:
-      POSTGRES_DB: teknisio_db
-      POSTGRES_USER: teknisio_user
-      POSTGRES_PASSWORD: teknisio_pass
-      POSTGRES_HOST_AUTH_METHOD: trust
+    env_file:
+      - .env
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Set folder db teknisio
-      - ./db/init.sql:/docker-entrypoint-initdb.d/v1_init_teknisio_db.sql
     restart: unless-stopped
 
 volumes:
