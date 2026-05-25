@@ -19,8 +19,8 @@ public class JadwalTeknisi {
   private UUID idJadwal;
 
   @ManyToOne
-  @JoinColumn(name = "id_teknisi", nullable = false)
-  private TeknisiProfile teknisi;
+  @JoinColumn(name = "id_teknisi_profile")
+  private TeknisiProfile teknisiProfile;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "hari", nullable = false)

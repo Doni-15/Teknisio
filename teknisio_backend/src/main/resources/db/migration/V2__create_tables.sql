@@ -34,9 +34,9 @@ CREATE TABLE teknisi_profile (
   id_user               UUID NOT NULL UNIQUE,
   spesialisasi          TEKNISI_SPESIALISASI NOT NULL,
   status_ketersediaan   TEKNISI_STATUS NOT NULL DEFAULT 'OFFLINE',
-  rating_avg            DECIMAL(3, 2) NOT NULL DEFAULT 0 CHECK (rating_avg >= 0),
+  rating_avg            DECIMAL(3, 2) NOT NULL DEFAULT 0 CHECK (rating_avg BETWEEN 0 AND 5),
   rating_count          INTEGER NOT NULL DEFAULT 0 CHECK (rating_count >= 0),
-  total_pekerjaan       INTEGER NOT NULL DEFAULT 0,
+  total_pekerjaan       INTEGER NOT NULL DEFAULT 0 CHECK (total_pekerjaan >= 0),
   deskripsi             TEXT,
 
   created_at            TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -51,7 +51,7 @@ CREATE TABLE teknisi_profile (
 -- KATEGORI LAYANAN
 CREATE TABLE kategori_layanan (
   id_kategori           UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-  nama_kategori         VARCHAR(100) NOT NULL,
+  nama_kategori         VARCHAR(100) NOT NULL UNIQUE,
   icon                  TEXT,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -64,7 +64,7 @@ CREATE TABLE jenis_layanan (
 
   nama_layanan          VARCHAR(100) NOT NULL,
   deskripsi             TEXT,
-  estimasi_menit        INTEGER NOT NULL,
+  estimasi_menit        INTEGER NOT NULL CHECK (estimasi_menit > 0),
   aktif                 BOOLEAN NOT NULL DEFAULT TRUE,
 
   created_at            TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -82,7 +82,7 @@ CREATE TABLE permintaan_layanan (
   id_permintaan           UUID PRIMARY KEY DEFAULT gen_random_uuid (),
   kode_permintaan         VARCHAR(50) NOT NULL UNIQUE,
   id_pengguna             UUID NOT NULL,
-  id_teknisi              UUID NOT NULL,
+  id_teknisi              UUID,
   id_layanan              UUID NOT NULL,
 
   latitude                DECIMAL(10, 7) NOT NULL,
@@ -91,7 +91,7 @@ CREATE TABLE permintaan_layanan (
   detail_alamat           TEXT,
   deskripsi_masalah       TEXT NOT NULL,
   status                  REQUEST_STATUS NOT NULL DEFAULT 'WAITING',
-  estimasi_biaya          NUMERIC(12, 2),
+  estimasi_biaya          NUMERIC(12, 2) CHECK (estimasi_biaya >= 0),
   catatan_teknisi         TEXT,
   waktu_permintaan        TIMESTAMPTZ,
   waktu_diterima          TIMESTAMPTZ,
@@ -139,7 +139,12 @@ CREATE TABLE pesan (
   CONSTRAINT fk_pesan_pengirim
     FOREIGN KEY (id_pengirim)
     REFERENCES users (id_user)
-    ON DELETE SET NULL
+    ON DELETE SET NULL,
+
+  CONSTRAINT chk_pesan_content CHECK (
+    isi_pesan   IS NOT NULL OR
+    file_url    IS NOT NULL
+  )
 );
 
 -- NOTIFIKASI
@@ -207,7 +212,7 @@ CREATE TABLE media_permintaan (
   url_file                TEXT NOT NULL,
   tipe_file               VARCHAR(50),
   mime_type               VARCHAR(100),
-  ukuran_file             BIGINT,
+  ukuran_file             BIGINT CHECK (ukuran_file >= 0),
 
   created_at              TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   deleted_at              TIMESTAMPTZ,
@@ -221,7 +226,7 @@ CREATE TABLE media_permintaan (
 -- JADWAL TEKNISI
 CREATE TABLE jadwal_teknisi (
   id_jadwal               UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-  id_teknisi              UUID NOT NULL,
+  id_teknisi_profile      UUID NOT NULL,
   hari                    HARI_ENUM NOT NULL,
   jam_mulai               TIME NOT NULL,
   jam_selesai             TIME NOT NULL,
@@ -234,7 +239,7 @@ CREATE TABLE jadwal_teknisi (
     CHECK (jam_selesai > jam_mulai),
 
   CONSTRAINT fk_jadwal_teknisi
-    FOREIGN KEY (id_teknisi)
+    FOREIGN KEY (id_teknisi_profile)
     REFERENCES teknisi_profile (id_teknisi_profile)
     ON DELETE CASCADE
 );

@@ -3,6 +3,30 @@
 -- DROP ALL TABLES
 -- ============================================================
 
+DROP TABLE IF EXISTS review CASCADE;
+
+DROP TABLE IF EXISTS user_session CASCADE;
+
+DROP TABLE IF EXISTS jadwal_teknisi CASCADE;
+
+DROP TABLE IF EXISTS media_permintaan CASCADE;
+
+DROP TABLE IF EXISTS log_aktivitas CASCADE;
+
+DROP TABLE IF EXISTS riwayat_status CASCADE;
+
+DROP TABLE IF EXISTS notifikasi CASCADE;
+
+DROP TABLE IF EXISTS pesan CASCADE;
+
+DROP TABLE IF EXISTS permintaan_layanan CASCADE;
+
+DROP TABLE IF EXISTS jenis_layanan CASCADE;
+
+DROP TABLE IF EXISTS kategori_layanan CASCADE;
+
+DROP TABLE IF EXISTS teknisi_profile CASCADE;
+
 DROP TABLE IF EXISTS users CASCADE;
 
 -- ============================================================

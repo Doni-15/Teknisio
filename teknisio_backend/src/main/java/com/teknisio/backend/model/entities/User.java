@@ -1,18 +1,24 @@
 package com.teknisio.backend.model.entities;
 
-// Import enums
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.teknisio.backend.model.enums.UserRole;
 import com.teknisio.backend.model.enums.UserStatus;
 
-// import package
-import java.util.*;
+import java.util.UUID;
 import java.time.OffsetDateTime;
-import lombok.Data;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "users")
 public class User {
@@ -28,8 +34,9 @@ public class User {
   private String email;
 
   @Column(name = "no_telepon", nullable = false, unique = true, length = 20)
-  private String noTelpon;
+  private String noTelepon;
 
+  @JsonIgnore
   @Column(name = "password_hash", nullable = false)
   private String passwordHash;
 
@@ -45,7 +52,7 @@ public class User {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status_akun", nullable = false)
-  private UserStatus statusAkun;
+  private UserStatus statusAkun = UserStatus.ACTIVE;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
