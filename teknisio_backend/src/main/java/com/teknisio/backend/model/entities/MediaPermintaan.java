@@ -11,7 +11,6 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "media_permintaan")
 public class MediaPermintaan {
-
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   @Column(name = "id_media")

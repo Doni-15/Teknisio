@@ -49,9 +49,8 @@ public class TeknisiProfile {
   @DecimalMin("0.0")
   private BigDecimal ratingAvg = BigDecimal.ZERO;
 
-  @Column(name = "rating_count", nullable = false, precision = 3, scale = 2)
-  @DecimalMin("0.0")
-  private BigDecimal ratingCount = BigDecimal.ZERO;
+  @Column(name = "rating_count", nullable = false)
+  private int ratingCount;
 
   @Min(0)
   @Column(name = "total_pekerjaan", nullable = false)

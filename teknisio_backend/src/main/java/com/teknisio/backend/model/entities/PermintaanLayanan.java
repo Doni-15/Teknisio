@@ -10,6 +10,7 @@ import com.teknisio.backend.model.enums.RequestStatus;
 import com.teknisio.backend.utils.idGenerator;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -18,7 +19,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.Data;
 
+@Data
+@Entity
+@Table(name = "permintaan_layanan")
 public class PermintaanLayanan {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -48,7 +54,7 @@ public class PermintaanLayanan {
   // FK ke jenis layanan dengan konsep banyak permintaan ke satu perminataan layanan
   @ManyToOne
   @JoinColumn(name = "id_layanan", nullable = false)
-  private User idLayanan;
+  private JenisLayanan idLayanan;
 
   @Column(name = "latitude", nullable = false, precision = 10, scale = 7)
   private BigDecimal latitude;
