@@ -1,33 +1,63 @@
 -- Active: 1779499726179@@127.0.0.1@5432@teknisio_db
+-- ============================================================
+-- Teknisio Migration V1: Extension dan ENUM
+-- ============================================================
+
+-- ============================================================
+-- EXTENSION
+-- ============================================================
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================================
 -- ENUMS
 -- ============================================================
-
-CREATE TYPE USER_ROLE AS ENUM (
-  'CUSTOMER', 'TEKNISI', 'ADMIN'
+CREATE TYPE user_role AS ENUM (
+  'CUSTOMER',
+  'TEKNISI',
+  'ADMIN'
 );
 
-CREATE TYPE USER_STATUS AS ENUM (
-  'ACTIVE', 'INACTIVE', 'BANNED', 'SUSPENDED'
+CREATE TYPE user_status AS ENUM (
+  'ACTIVE',
+  'INACTIVE',
+  'BANNED',
+  'SUSPENDED'
 );
 
-CREATE TYPE TEKNISI_STATUS AS ENUM (
-  'ONLINE', 'OFFLINE', 'BUSY', 'ON_LEAVE'
+CREATE TYPE teknisi_status AS ENUM (
+  'ONLINE',
+  'OFFLINE',
+  'BUSY',
+  'ON_LEAVE'
 );
 
-CREATE TYPE REQUEST_STATUS AS ENUM (
-  'WAITING', 'ACCEPTED', 'ON_PROGRESS', 'COMPLETED', 'CANCELLED', 'REJECTED'
+CREATE TYPE request_status AS ENUM (
+  'WAITING',
+  'ACCEPTED',
+  'ON_PROGRESS',
+  'COMPLETED',
+  'CANCELLED',
+  'REJECTED'
 );
 
-CREATE TYPE PESAN_TYPE AS ENUM (
-  'TEXT', 'IMAGE', 'SYSTEM'
+CREATE TYPE pesan_type AS ENUM (
+  'TEXT',
+  'IMAGE',
+  'SYSTEM'
 );
 
-CREATE TYPE NOTIFICATION_REFERENCE_TYPE AS ENUM (
-  'PERMINTAAN', 'CHAT', 'REVIEW'
+CREATE TYPE notification_reference_type AS ENUM (
+  'PERMINTAAN',
+  'CHAT',
+  'REVIEW'
 );
 
-CREATE TYPE HARI_ENUM AS ENUM (
-  'SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU', 'MINGGU'
+CREATE TYPE hari_enum AS ENUM (
+  'SENIN',
+  'SELASA',
+  'RABU',
+  'KAMIS',
+  'JUMAT',
+  'SABTU',
+  'MINGGU'
 );
