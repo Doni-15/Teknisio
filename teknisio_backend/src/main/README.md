@@ -1,8 +1,8 @@
 # Roadmap Backend Teknisio
 
-Roadmap pengerjaan backend Teknisio untuk aplikasi desktop dan mobile.
+Roadmap pengerjaan backend **Teknisio** untuk aplikasi desktop dan mobile.
 
-README ini menjadi panduan backend. Detail kontrak API yang lebih lengkap akan dibuat terpisah di `API_CONTRACT.md`.
+README ini menjadi panduan utama backend: berisi prinsip pengembangan, flow MVP, status pengerjaan, roadmap per modul, dan kontrak API yang sudah dibuat maupun yang akan dibuat.
 
 ---
 
@@ -18,18 +18,34 @@ README ini menjadi panduan backend. Detail kontrak API yang lebih lengkap akan d
 - DTO adalah kontrak antara backend dan frontend.
 - Endpoint resmi menggunakan English.
 - Endpoint Indonesia seperti `/api/kategori`, `/api/permintaan`, atau `/api/teknisi` tidak dipakai sebagai kontrak resmi.
+- Semua response API wajib memakai format `ApiResponse<T>`.
+- Semua error wajib konsisten melalui global exception handler atau security handler.
+- Untuk MVP, customer tidak memilih detail jenis servis seperti `AC Cleaning`, `AC Repair`, `Refrigerator Freon Refill`, atau sejenisnya.
+- Untuk MVP, customer hanya memilih `deviceCategoryIds` dan mengisi `issueDescription`.
+
+---
+
+## Legend Status
+
+| Badge | Arti |
+|---|---|
+| ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) | Sudah selesai dan sudah dites manual |
+| ![ongoing](https://img.shields.io/badge/%5Bongoing%5D-blue?style=flat-square) | Sedang dikerjakan / next immediate |
+| ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) | Belum dikerjakan |
+| ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) | Ditunda setelah MVP stable |
+| ![legacy](https://img.shields.io/badge/%5Blegacy%5D-lightgrey?style=flat-square) | Ada di konsep/schema lama, tapi tidak dipakai untuk MVP stable |
 
 ---
 
 ## Flow Final MVP
 
 ```text
-Customer login
+Customer register / login
 ↓
 Customer masuk ke halaman home
 ↓
 Customer melihat daftar alat elektronik:
-Air Conditioner, Refrigerator, Washing Machine, Television, Fan, Rice Cooker, dll.
+Air Conditioner, Refrigerator, Washing Machine, Television, Fan, Rice Cooker, Oven, Mixer, dll.
 ↓
 Customer memilih salah satu alat elektronik, misalnya Air Conditioner
 ↓
@@ -37,28 +53,35 @@ Backend mencari technician yang punya keahlian Air Conditioner
 ↓
 Frontend menampilkan daftar technician yang bisa menangani Air Conditioner
 ↓
+Customer bisa filter berdasarkan availabilityStatus dan sort berdasarkan rating/totalJobs/name
+↓
 Customer memilih salah satu technician
 ↓
-Sistem menampilkan semua keahlian technician tersebut
+Customer melihat detail technician dan semua supportedDeviceCategories
 Contoh: Air Conditioner + Refrigerator
 ↓
 Customer boleh memilih Air Conditioner saja, atau Air Conditioner + Refrigerator
 ↓
-Customer mengisi deskripsi masalah secara bebas
+Customer mengisi address, addressDetail, dan issueDescription
 ↓
 Customer membuat service request
+↓
+Status awal service request = WAITING
+↓
+Technician melihat request masuk
+↓
+Technician accept atau reject request
+↓
+Jika accepted, technician mulai pengerjaan
+↓
+Technician complete pengerjaan
+↓
+Status history tercatat
+↓
+Customer melihat status request
+↓
+Customer memberi review setelah request completed
 ```
-
-Untuk MVP, customer tidak memilih detail jenis servis seperti:
-
-```text
-AC Cleaning
-AC Repair
-Refrigerator Freon Refill
-Washing Machine Cleaning
-```
-
-Customer hanya memilih kategori alat elektronik dan mengisi `issueDescription`.
 
 ---
 
@@ -66,829 +89,1682 @@ Customer hanya memilih kategori alat elektronik dan mengisi `issueDescription`.
 
 | Konsep | Nama API | Nama internal yang boleh tetap dipakai |
 |---|---|---|
+| User | `user` | `User`, `users` |
+| Customer | `customer` | `User` role `CUSTOMER` |
+| Technician | `technician` | `User` role `TECHNICIAN`, `TeknisiProfile` |
 | Alat elektronik | `deviceCategory` | `KategoriLayanan` |
 | Keahlian technician | `technicianDeviceCategory` | `TeknisiKategoriLayanan` |
 | Permintaan layanan | `serviceRequest` | `PermintaanLayanan` |
 | Kategori yang dipilih dalam order | `selectedDeviceCategories` | `PermintaanLayananKategori` |
 | Deskripsi masalah | `issueDescription` | `deskripsiMasalah` |
-| Technician | `technician` | `Teknisi` |
+| Alamat | `address` | `alamat` |
+| Detail alamat | `addressDetail` | `detailAlamat` |
+| Status request | `status` | `RequestStatus` |
+| Riwayat status | `statusHistory` | `RiwayatStatus` |
+| Estimasi biaya | `estimatedCost` | `estimasiBiaya` |
+| Biaya akhir | `finalCost` | `biayaAkhir` |
+| Catatan technician | `technicianNote` | `catatanTeknisi` |
+| Alasan batal | `cancelReason` | `alasanBatal` |
+| Alasan tolak | `rejectReason` | `alasanTolak` |
 
 Catatan:
+
 - `JenisLayanan` dan `TeknisiLayanan` boleh tetap ada sebagai legacy.
 - Untuk MVP baru, flow tidak memakai `jenis_layanan`.
 - Jika nanti fitur berkembang, `jenis_layanan` bisa dipakai lagi untuk detail layanan spesifik.
 
 ---
 
-## 0. Fondasi Backend
+# 0. Fondasi Backend
 
-Target: backend punya struktur rapi, response seragam, error handling, repository, dan siap dikembangkan per modul.
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-00 [MVP] Rapikan struktur package**
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `config`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `model`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `repositories`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `dto`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `services`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `controllers`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `security`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `common`
-    - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `response`
-    - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `exception`
-  - ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Package `websocket` ditunda sampai fitur realtime/chat/notifikasi
-  - ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Package `common.util` ditunda sampai ada utility yang benar-benar dipakai
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-01 [MVP] Buat global response format**
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat `ApiResponse<T>`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response sukses punya `success`, `message`, `data`, `errors`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response error punya `success`, `message`, `data`, `errors`
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-02 [MVP] Buat global exception handler**
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat `GlobalExceptionHandler`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle validation error
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle not found
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle bad request
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle unauthorized
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle forbidden
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle internal server error
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-03 [MVP] Siapkan DTO validation**
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambahkan dependency validation jika belum ada
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Gunakan `@NotBlank`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Gunakan `@NotNull`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Gunakan `@Email`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Gunakan `@Size`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Gunakan `@Pattern` jika perlu
-
-- ![Status](https://img.shields.io/badge/status-ongoing-blue?style=flat-square) **BE-04 [MVP] Buat repository untuk entity inti**
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `UserRepository`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `UserSessionRepository`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `TeknisiProfileRepository`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `KategoriLayananRepository`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `PermintaanLayananRepository`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `MediaPermintaanRepository`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `PesanRepository`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `NotifikasiRepository`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `RiwayatStatusRepository`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `ReviewRepository`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `LogAktivitasRepository`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `TeknisiKategoriLayananRepository`
-  - ![Status](https://img.shields.io/badge/status-ongoing-blue?style=flat-square) `PermintaanLayananKategoriRepository`
-  - ![finished](https://img.shields.io/badge/%5Blegacy%5D-lightgrey?style=flat-square) `JenisLayananRepository` tetap legacy
-  - ![finished](https://img.shields.io/badge/%5Blegacy%5D-lightgrey?style=flat-square) `TeknisiLayananRepository` tetap legacy
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-05 [MVP] Validasi koneksi database dan Flyway**
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `./gradlew clean build` sukses
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `./gradlew bootRun` sukses
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tabel terbentuk otomatis
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `/actuator/health` status `UP`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tidak ada error migration
+Target: backend punya struktur rapi, response seragam, error handling, repository, security, database migration, dan siap dikembangkan per modul.
 
 ---
 
-## 1. Master Data Layanan / Alat Elektronik
+## BE-00 [MVP] Rapikan struktur package
 
-Target: customer bisa melihat daftar alat elektronik dan backend bisa mencari technician berdasarkan keahlian alat elektronik.
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-20 [MVP] Seed data kategori alat elektronik**
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori Air Conditioner
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori Refrigerator
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori Washing Machine
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori Television
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori Fan
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori Rice Cooker
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori lain jika UI membutuhkan, misalnya Oven atau Mixer
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Pastikan seed data tidak duplikat saat migration dijalankan ulang
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Pastikan semua data default `aktif = true`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tidak perlu seed jenis layanan/detail servis untuk MVP
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-21 [MVP] List kategori alat elektronik aktif**
-  - Endpoint: `GET /api/device-categories`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Hanya tampilkan data `aktif = true`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Jangan tampilkan data yang sudah soft delete
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response menggunakan field English
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response berisi `deviceCategoryId`, `name`, `icon`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint boleh diakses tanpa login
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-22 [MVP] Detail kategori alat elektronik**
-  - Endpoint: `GET /api/device-categories/{deviceCategoryId}`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi kategori ditemukan
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi kategori aktif
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi kategori belum soft delete
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response menggunakan field English
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response berisi `deviceCategoryId`, `name`, `icon`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Jika kategori tidak ditemukan, return error rapi
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-23 [MVP] Buat relasi keahlian technician berdasarkan kategori alat elektronik**
-  - Tabel: `teknisi_kategori_layanan`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Satu technician bisa memiliki banyak keahlian alat elektronik
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Satu kategori alat elektronik bisa dimiliki banyak technician
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Relasi menggunakan `id_teknisi_profile`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Relasi menggunakan `id_kategori`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Pastikan relasi tidak duplikat
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Pastikan data default `aktif = true`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Relasi ini digunakan untuk mencari technician berdasarkan alat elektronik yang dipilih customer
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-24 [MVP] Search technician berdasarkan kategori alat elektronik**
-  - Endpoint: `GET /api/customers/technicians?deviceCategoryId={deviceCategoryId}`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint hanya untuk customer yang sudah login
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `deviceCategoryId` ditemukan
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi kategori aktif
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi kategori belum soft delete
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tampilkan technician yang memiliki keahlian pada kategori tersebut
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Hanya tampilkan technician dengan relasi keahlian aktif
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sertakan `technicianProfileId`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sertakan `name`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sertakan `profilePhoto`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sertakan `availabilityStatus`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sertakan `averageRating`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sertakan `ratingCount`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sertakan `totalJobs`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sertakan `supportedDeviceCategories`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response menggunakan field English
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-25 [MVP] Detail technician untuk customer**
-  - Endpoint: `GET /api/customers/technicians/{technicianProfileId}`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint hanya untuk customer yang sudah login
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tanpa token return `Unauthorized`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Token technician return `Forbidden`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi technician ditemukan
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi akun technician aktif
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `technicianProfileId`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `name`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `profilePhoto`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `availabilityStatus`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `averageRating`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `ratingCount`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `totalJobs`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `description`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `supportedDeviceCategories`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `supportedDeviceCategories` hanya berisi relasi keahlian aktif
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Jangan tampilkan kategori yang tidak aktif atau sudah soft delete
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response menggunakan field English
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Jika technician tidak ditemukan, return `Technician not found`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint digunakan setelah customer memilih technician
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-26 [NEXT] Filter technician**
-  - Endpoint: `GET /api/customers/technicians?deviceCategoryId={deviceCategoryId}&availabilityStatus=ONLINE&sort=rating`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Filter berdasarkan status ketersediaan
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sort berdasarkan rating
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sort berdasarkan total pekerjaan
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sort berdasarkan nama
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi invalid `availabilityStatus`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi invalid `sort`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tanpa token return `Unauthorized`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Token technician return `Forbidden`
-  - ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Sort berdasarkan harga jika harga technician sudah tersedia
-  - ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Sort berdasarkan jarak jika latitude dan longitude technician sudah tersedia
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Untuk MVP awal, filter jarak boleh ditunda
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `config`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `model`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `model.entities`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `model.entities.base`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `model.enums`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `repositories`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `dto.requests`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `dto.responses`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `services`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `controllers`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `security`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `common.response`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `common.exception`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Package `common.util`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Package `websocket` ditunda sampai fitur realtime/chat/notifikasi
 
 ---
 
-## 2. Auth dan Session
+## BE-01 [MVP] Buat global response format
 
-Target: user bisa register, login, logout, refresh token, dan akses endpoint sesuai role.
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat `ApiResponse<T>`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response sukses punya `success`, `message`, `data`, `errors`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response error punya `success`, `message`, `data`, `errors`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Semua controller baru memakai `ApiResponse`
 
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-10 [MVP] Register customer**
-  - Endpoint: `POST /api/auth/register/customer`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `name` wajib
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `email` wajib dan unik
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `phoneNumber` wajib dan unik
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `password` minimal
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Simpan password dalam bentuk hash
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Role otomatis `CUSTOMER`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Status akun otomatis `ACTIVE`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response field menggunakan English
+Format response sukses:
 
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-11 [MVP] Register technician**
-  - Endpoint: `POST /api/auth/register/technician`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Simpan data user dengan role `TECHNICIAN`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat otomatis data `teknisi_profile`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Status ketersediaan default `OFFLINE`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Rating default 0
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Total pekerjaan default 0
-  - ![Status](https://img.shields.io/badge/status-ongoing-blue?style=flat-square) Keahlian technician dapat diatur setelah register melalui endpoint skill technician
+```json
+{
+  "success": true,
+  "message": "Success message",
+  "data": {},
+  "errors": null
+}
+```
 
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-12 [MVP] Login**
-  - Endpoint: `POST /api/auth/login`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Login pakai email dan password
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Cek password dengan BCrypt
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Cek status akun `ACTIVE`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Generate JWT access token
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return token dan data user
+Format response error:
 
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-13 [MVP] JWT authentication**
-  - Endpoint: `GET /api/auth/profile`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat JWT validation
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat JWT filter
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Ambil user dari token
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint selain public/register/login wajib pakai token
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-14 [NEXT] Refresh token**
-  - Endpoint: `POST /api/auth/refresh`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi refresh token
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi session belum expired
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi session belum revoked
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Generate access token baru
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-15 [MVP] Logout**
-  - Endpoint: `POST /api/auth/logout`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Revoke session aktif
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Isi `revoked_at`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Token lama tidak bisa dipakai refresh
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-16 [MVP] Password hashing**
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Gunakan BCrypt
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Jangan pernah simpan password asli
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Jangan tampilkan `password_hash` di response
-
-- ![Status](https://img.shields.io/badge/status-ongoing-blue?style=flat-square) **BE-17 [MVP] Role-based access**
-  - ![Status](https://img.shields.io/badge/status-ongoing-blue?style=flat-square) Endpoint `/api/customers/**` hanya bisa diakses customer
-  - ![Status](https://img.shields.io/badge/status-ongoing-blue?style=flat-square) Endpoint `/api/technicians/**` hanya bisa diakses technician
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint umum bisa diakses tanpa login jika diperlukan
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint profil sendiri wajib login
-  - ![Status](https://img.shields.io/badge/status-ongoing-blue?style=flat-square) Pastikan endpoint customer search technician tidak bentrok dengan endpoint self-service technician
+```json
+{
+  "success": false,
+  "message": "Error message",
+  "data": null,
+  "errors": null
+}
+```
 
 ---
 
-## 3. Profil User dan Technician
+## BE-02 [MVP] Buat global exception handler
 
-Target: customer dan technician bisa melihat serta mengubah profil dasar. Technician juga bisa mengatur keahlian alat elektronik yang dikuasai.
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-30 [MVP] Lihat profil sendiri**
-  - Endpoint: `GET /api/auth/profile`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `name`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `email`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `phoneNumber`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `profilePhoto`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `address`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `role`
-
-- [ ] **BE-31 [MVP] Update profil sendiri**
-  - Endpoint: `PUT /api/users/me`
-  - [ ] Bisa update `name`
-  - [ ] Bisa update `phoneNumber`
-  - [ ] Bisa update `profilePhoto`
-  - [ ] Bisa update `address`
-  - [ ] Validasi `phoneNumber` jika berubah
-  - [ ] Response menggunakan field English
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-32 [MVP] Lihat profil technician**
-  - Endpoint untuk customer: `GET /api/customers/technicians/{technicianProfileId}`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `technicianProfileId`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `name`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `profilePhoto`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `availabilityStatus`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `averageRating`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `ratingCount`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `totalJobs`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `description`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `supportedDeviceCategories`
-  - Catatan: sudah diimplementasikan lebih awal pada flow technician discovery / BE-25
-
-- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-33 [MVP] Technician update availability status**
-  - Endpoint: `PATCH /api/technicians/me/status`
-  - Request body: `availabilityStatus`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Status bisa `ONLINE`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Status bisa `OFFLINE`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Status bisa `BUSY`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Status bisa `ON_LEAVE`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Hanya technician yang boleh akses
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Customer token return `Forbidden`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tanpa token return `Unauthorized`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi invalid status
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Update `status_ketersediaan` di `teknisi_profile`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response menggunakan field English
-
-- [ ] **BE-34 [NEXT] Technician update deskripsi profil**
-  - Endpoint: `PUT /api/technicians/me/profile`
-  - [ ] Bisa update `description`
-  - [ ] Bisa update `profilePhoto` via user profile
-  - [ ] Bisa update `address`
-
-- [ ] **BE-35 [MVP] Technician tambah keahlian alat elektronik**
-  - Endpoint: `POST /api/technicians/me/device-categories`
-  - [ ] Request berisi `deviceCategoryId`
-  - [ ] Validasi kategori ditemukan
-  - [ ] Validasi kategori aktif
-  - [ ] Validasi kategori belum soft delete
-  - [ ] Cegah duplikasi keahlian
-  - [ ] Simpan ke `teknisi_kategori_layanan`
-  - [ ] Hanya technician yang boleh akses
-
-- [ ] **BE-36 [MVP] Technician hapus/nonaktifkan keahlian alat elektronik**
-  - Endpoint: `DELETE /api/technicians/me/device-categories/{deviceCategoryId}`
-  - [ ] Validasi relasi ditemukan
-  - [ ] Hapus atau set `aktif = false`
-  - [ ] Hanya pemilik profil technician yang boleh hapus
-
-- [ ] **BE-37 [MVP] Technician lihat keahlian sendiri**
-  - Endpoint: `GET /api/technicians/me/device-categories`
-  - [ ] Return semua keahlian aktif milik technician login
-  - [ ] Response menggunakan field English
-  - [ ] Jangan tampilkan kategori yang nonaktif atau soft delete
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat `GlobalExceptionHandler`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle validation error
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle bad request
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle unauthorized
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle forbidden
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle not found
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle conflict
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Handle internal server error
 
 ---
 
-## 4. Jadwal Technician
+## BE-03 [MVP] Siapkan DTO validation
 
-Target: technician bisa mengatur jam kerja.
-
-- [ ] **BE-40 [MVP] Tambah jadwal kerja**
-  - Endpoint: `POST /api/technicians/me/schedules`
-  - [ ] Input `day`
-  - [ ] Input `startTime`
-  - [ ] Input `endTime`
-  - [ ] Validasi `endTime` lebih besar dari `startTime`
-  - [ ] Cegah jadwal duplikat
-
-- [ ] **BE-41 [MVP] Lihat jadwal sendiri**
-  - Endpoint: `GET /api/technicians/me/schedules`
-  - [ ] Return semua jadwal aktif
-  - [ ] Urutkan berdasarkan `day` dan `startTime`
-
-- [ ] **BE-42 [NEXT] Update jadwal kerja**
-  - Endpoint: `PUT /api/technicians/me/schedules/{scheduleId}`
-  - [ ] Validasi jadwal milik technician tersebut
-  - [ ] Bisa ubah `day`
-  - [ ] Bisa ubah `startTime`
-  - [ ] Bisa ubah `endTime`
-  - [ ] Bisa ubah active/nonactive
-
-- [ ] **BE-43 [MVP] Hapus/nonaktifkan jadwal kerja**
-  - Endpoint: `DELETE /api/technicians/me/schedules/{scheduleId}`
-  - [ ] Validasi jadwal milik technician tersebut
-  - [ ] Soft delete/nonaktifkan jadwal
-
-- [ ] **BE-44 [MVP] Validasi jadwal**
-  - [ ] `endTime` harus lebih besar dari `startTime`
-  - [ ] `day` harus sesuai enum
-  - [ ] Tidak boleh bentrok dengan jadwal yang sama
-
-- [ ] **BE-45 [NEXT] Service cek technician tersedia**
-  - [ ] Cek status technician `ONLINE`
-  - [ ] Cek keahlian device category
-  - [ ] Cek jadwal kerja aktif
-  - [ ] Dipakai saat menampilkan daftar technician dan request masuk
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambahkan dependency validation
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Gunakan `@NotBlank`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Gunakan `@NotEmpty`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Gunakan `@Email`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Gunakan `@Size`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Gunakan `@Pattern` jika perlu
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Jangan validasi bisnis kompleks di DTO; validasi bisnis tetap di service
 
 ---
 
-## 5. Service Request — Customer
+## BE-04 [MVP] Buat repository untuk entity inti
 
-Target: customer bisa membuat, melihat, dan membatalkan service request. Customer memilih technician terlebih dahulu, lalu memilih satu atau lebih alat elektronik yang dikuasai technician tersebut.
-
-- [ ] **BE-50 [MVP] Customer membuat service request**
-  - Endpoint: `POST /api/service-requests`
-  - [ ] Validasi user role `CUSTOMER`
-  - [ ] Validasi `technicianProfileId` ditemukan
-  - [ ] Validasi akun technician aktif
-  - [ ] Validasi `deviceCategoryIds` minimal 1
-  - [ ] Validasi semua device category ditemukan
-  - [ ] Validasi semua device category aktif dan belum soft delete
-  - [ ] Validasi technician memiliki semua keahlian sesuai `deviceCategoryIds`
-  - [ ] Simpan `technicianProfileId`
-  - [ ] Simpan `deviceCategoryIds` ke tabel `permintaan_layanan_kategori`
-  - [ ] Simpan `latitude` jika tersedia
-  - [ ] Simpan `longitude` jika tersedia
-  - [ ] Simpan `address`
-  - [ ] Simpan `addressDetail`
-  - [ ] Simpan `issueDescription`
-  - [ ] Generate `requestCode`, contoh `REQ-178...`
-  - [ ] Status awal `WAITING`
-
-- [ ] **BE-51 [MVP] Simpan detail lokasi dan masalah**
-  - [ ] `address` wajib
-  - [ ] `issueDescription` wajib
-  - [ ] `addressDetail` opsional
-  - [ ] `latitude` opsional untuk MVP
-  - [ ] `longitude` opsional untuk MVP
-  - [ ] Jika latitude dikirim, validasi range -90 sampai 90
-  - [ ] Jika longitude dikirim, validasi range -180 sampai 180
-
-- [ ] **BE-52 [MVP] Tabel item alat elektronik pada service request**
-  - Tabel: `permintaan_layanan_kategori`
-  - [ ] Satu service request bisa punya banyak device category
-  - [ ] Satu service request tetap hanya punya satu technician
-  - [ ] Device category yang dipilih harus termasuk keahlian technician
-  - [ ] Tidak boleh ada duplikasi category dalam satu request
-  - [ ] Relasi menggunakan `id_permintaan`
-  - [ ] Relasi menggunakan `id_kategori`
-
-- [ ] **BE-53 [MVP] Customer lihat riwayat service request**
-  - Endpoint: `GET /api/customers/service-requests`
-  - [ ] Hanya tampilkan request milik user login
-  - [ ] Bisa pagination
-  - [ ] Bisa filter status opsional
-  - [ ] Urutkan dari terbaru
-  - [ ] Sertakan technician
-  - [ ] Sertakan `selectedDeviceCategories`
-
-- [ ] **BE-54 [MVP] Customer lihat detail service request**
-  - Endpoint: `GET /api/service-requests/{serviceRequestId}`
-  - [ ] Validasi request milik customer atau technician terkait
-  - [ ] Return data customer
-  - [ ] Return data technician
-  - [ ] Return `selectedDeviceCategories`
-  - [ ] Return address dan issueDescription
-  - [ ] Return status
-  - [ ] Return estimasi dan biaya akhir jika ada
-
-- [ ] **BE-55 [MVP] Customer batalkan service request**
-  - Endpoint: `PATCH /api/service-requests/{serviceRequestId}/cancel`
-  - [ ] Hanya customer pemilik request
-  - [ ] Hanya boleh jika status masih `WAITING` atau `ACCEPTED`
-  - [ ] Simpan `cancelReason`
-  - [ ] Update status `CANCELLED`
-  - [ ] Isi `cancelledAt`
-  - [ ] Catat riwayat status
-
-- [ ] **BE-56 [NEXT] Simpan media request**
-  - Endpoint: `POST /api/service-requests/{serviceRequestId}/media`
-  - [ ] Validasi request milik customer
-  - [ ] Simpan `fileUrl`
-  - [ ] Simpan `fileType`
-  - [ ] Simpan `mimeType`
-  - [ ] Simpan `fileSize`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `UserRepository`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `UserSessionRepository`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `TeknisiProfileRepository`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `KategoriLayananRepository`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `TeknisiKategoriLayananRepository`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `PermintaanLayananRepository`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `PermintaanLayananKategoriRepository`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `RiwayatStatusRepository`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) `ReviewRepository` jika tabel review sudah dibuat
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) `NotificationRepository` jika fitur notifikasi dikerjakan
+- ![legacy](https://img.shields.io/badge/%5Blegacy%5D-lightgrey?style=flat-square) `JenisLayananRepository` tetap legacy
+- ![legacy](https://img.shields.io/badge/%5Blegacy%5D-lightgrey?style=flat-square) `TeknisiLayananRepository` tetap legacy
 
 ---
 
-## 6. Service Request — Technician
+## BE-05 [MVP] Validasi koneksi database dan Flyway
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `./gradlew clean build` sukses
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `./gradlew bootRun` sukses
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tabel terbentuk otomatis lewat Flyway
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `/actuator/health` status `UP`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tidak ada error migration
+
+Migration aktif:
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `V1__create_enums.sql`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `V2__create_core_tables.sql`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `V3__create_indexes.sql`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `V4__create_triggers.sql`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `V5__seed_device_categories.sql`
+
+Catatan:
+
+- Jangan mengubah migration lama kalau sudah pernah dijalankan di database tim.
+- Jika ada perubahan schema, buat migration baru `V6__nama_perubahan.sql`.
+
+---
+
+# 1. Auth dan Session
+
+Target: customer dan technician bisa register, login, melihat profile, dan mengakses endpoint sesuai role.
+
+---
+
+## BE-10 [MVP] Register customer
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `POST /api/auth/register/customer`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Public endpoint
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `name` wajib
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `email` wajib dan format email valid
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `phoneNumber` wajib dan unik
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `password` minimal
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Simpan password dalam bentuk hash BCrypt
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Role otomatis `CUSTOMER`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Status akun otomatis `ACTIVE`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response field menggunakan English
+
+Contract:
+
+```http
+POST /api/auth/register/customer
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "name": "Customer Demo",
+  "email": "customer.demo@mail.com",
+  "phoneNumber": "+6281234567890",
+  "password": "password123",
+  "address": "Jl. Contoh No. 123"
+}
+```
+
+Success `201`:
+
+```json
+{
+  "success": true,
+  "message": "Customer registered successfully",
+  "data": {
+    "accessToken": "jwt-token",
+    "tokenType": "Bearer",
+    "user": {
+      "userId": "uuid",
+      "name": "Customer Demo",
+      "email": "customer.demo@mail.com",
+      "phoneNumber": "+6281234567890",
+      "role": "CUSTOMER"
+    }
+  },
+  "errors": null
+}
+```
+
+---
+
+## BE-11 [MVP] Register technician
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `POST /api/auth/register/technician`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Public endpoint
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Simpan data user dengan role `TECHNICIAN`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat otomatis data `teknisi_profile`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Status ketersediaan default `OFFLINE`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Rating default `0`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Rating count default `0`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Total pekerjaan default `0`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response field menggunakan English
+
+Contract:
+
+```http
+POST /api/auth/register/technician
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "name": "Technician Demo",
+  "email": "technician.demo@mail.com",
+  "phoneNumber": "+6281234567891",
+  "password": "password123",
+  "address": "Jl. Teknisi No. 1",
+  "description": "Teknisi elektronik rumah tangga"
+}
+```
+
+Success `201`:
+
+```json
+{
+  "success": true,
+  "message": "Technician registered successfully",
+  "data": {
+    "accessToken": "jwt-token",
+    "tokenType": "Bearer",
+    "user": {
+      "userId": "uuid",
+      "name": "Technician Demo",
+      "email": "technician.demo@mail.com",
+      "phoneNumber": "+6281234567891",
+      "role": "TECHNICIAN"
+    }
+  },
+  "errors": null
+}
+```
+
+---
+
+## BE-12 [MVP] Login
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `POST /api/auth/login`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Public endpoint
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Login pakai email dan password
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Cek password dengan BCrypt
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Cek status akun `ACTIVE`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Generate JWT access token
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return token dan data user
+
+Contract:
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "email": "customer.demo@mail.com",
+  "password": "password123"
+}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "accessToken": "jwt-token",
+    "tokenType": "Bearer",
+    "user": {
+      "userId": "uuid",
+      "name": "Customer Demo",
+      "email": "customer.demo@mail.com",
+      "phoneNumber": "+6281234567890",
+      "role": "CUSTOMER"
+    }
+  },
+  "errors": null
+}
+```
+
+---
+
+## BE-13 [MVP] Lihat profil sendiri
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `GET /api/auth/profile`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Harus login
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Ambil user dari JWT token
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tidak expose password hash
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response field menggunakan English
+
+Contract:
+
+```http
+GET /api/auth/profile
+Authorization: Bearer {token}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Profile retrieved successfully",
+  "data": {
+    "userId": "uuid",
+    "name": "Customer Demo",
+    "email": "customer.demo@mail.com",
+    "phoneNumber": "+6281234567890",
+    "profilePhoto": null,
+    "address": "Jl. Contoh No. 123",
+    "role": "CUSTOMER",
+    "accountStatus": "ACTIVE"
+  },
+  "errors": null
+}
+```
+
+---
+
+## BE-14 [NEXT] Refresh token
+
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint: `POST /api/auth/refresh`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Validasi refresh token
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Validasi session belum expired
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Validasi session belum revoked
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Generate access token baru
+
+Catatan:
+
+- Tabel `user_session` sudah tersedia, tapi flow refresh token belum prioritas MVP stable awal.
+
+---
+
+## BE-15 [NEXT] Logout server-side
+
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint: `POST /api/auth/logout`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Revoke session aktif
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Isi `revoked_at`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Token lama tidak bisa dipakai refresh
+
+Catatan:
+
+- Untuk MVP awal, logout bisa dilakukan di client dengan menghapus token.
+
+---
+
+## BE-16 [MVP] Role-based access
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint `/api/customers/**` hanya bisa diakses `CUSTOMER`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint `/api/technicians/**` hanya bisa diakses `TECHNICIAN`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint `/api/admin/**` hanya bisa diakses `ADMIN`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint auth register/login public
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint `GET /api/device-categories/**` public
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint profile wajib login
+
+---
+
+# 2. Master Data Device Category dan Technician Skill
+
+Target: customer bisa melihat daftar alat elektronik dan technician bisa mengatur keahlian alat elektronik yang dikuasai.
+
+---
+
+## BE-20 [MVP] Seed data kategori alat elektronik
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori `Air Conditioner`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori `Refrigerator`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori `Washing Machine`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori `Television`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori `Fan`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori `Rice Cooker`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori `Oven`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tambah kategori `Mixer`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Pastikan seed data tidak duplikat saat migration dijalankan ulang
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Pastikan semua data default `aktif = true`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tidak perlu seed jenis layanan/detail servis untuk MVP
+
+---
+
+## BE-21 [MVP] List kategori alat elektronik aktif
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `GET /api/device-categories`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint boleh diakses tanpa login
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Hanya tampilkan data `aktif = true`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Jangan tampilkan data yang sudah soft delete
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response menggunakan field English
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response berisi `deviceCategoryId`, `name`, `icon`
+
+Contract:
+
+```http
+GET /api/device-categories
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Device categories retrieved successfully",
+  "data": [
+    {
+      "deviceCategoryId": "6e6349a8-e528-4a38-8b1a-6123c4f1c40d",
+      "name": "Air Conditioner",
+      "icon": "air-conditioner"
+    }
+  ],
+  "errors": null
+}
+```
+
+---
+
+## BE-22 [MVP] Detail kategori alat elektronik
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `GET /api/device-categories/{deviceCategoryId}`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint boleh diakses tanpa login
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi UUID
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi kategori ditemukan
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi kategori aktif
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi kategori belum soft delete
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Jika UUID invalid, return `400`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Jika kategori tidak ditemukan, return `404`
+
+Contract:
+
+```http
+GET /api/device-categories/{deviceCategoryId}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Device category retrieved successfully",
+  "data": {
+    "deviceCategoryId": "6e6349a8-e528-4a38-8b1a-6123c4f1c40d",
+    "name": "Air Conditioner",
+    "icon": "air-conditioner"
+  },
+  "errors": null
+}
+```
+
+---
+
+## BE-23 [MVP] Technician tambah keahlian alat elektronik
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `POST /api/technicians/device-categories`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Hanya technician yang boleh akses
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Customer token return `403`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tanpa token return `401`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Request berisi `deviceCategoryId`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi UUID
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi kategori ditemukan
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi kategori aktif dan belum soft delete
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Cegah duplikasi skill aktif
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Skill yang pernah dihapus bisa diaktifkan ulang
+
+Contract:
+
+```http
+POST /api/technicians/device-categories
+Authorization: Bearer {technicianToken}
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "deviceCategoryId": "6e6349a8-e528-4a38-8b1a-6123c4f1c40d"
+}
+```
+
+Success `201`:
+
+```json
+{
+  "success": true,
+  "message": "Technician device category added successfully",
+  "data": {
+    "technicianProfileId": "b15f2a79-3082-49f0-91e8-3c3f9037a2ba",
+    "deviceCategoryId": "6e6349a8-e528-4a38-8b1a-6123c4f1c40d",
+    "name": "Air Conditioner",
+    "icon": "air-conditioner",
+    "active": true
+  },
+  "errors": null
+}
+```
+
+---
+
+## BE-24 [MVP] Technician lihat keahlian sendiri
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `GET /api/technicians/device-categories`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Hanya technician yang boleh akses
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return semua keahlian aktif milik technician login
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Jangan tampilkan kategori yang nonaktif atau soft delete
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response menggunakan field English
+
+Contract:
+
+```http
+GET /api/technicians/device-categories
+Authorization: Bearer {technicianToken}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Technician device categories retrieved successfully",
+  "data": [
+    {
+      "technicianProfileId": "b15f2a79-3082-49f0-91e8-3c3f9037a2ba",
+      "deviceCategoryId": "6e6349a8-e528-4a38-8b1a-6123c4f1c40d",
+      "name": "Air Conditioner",
+      "icon": "air-conditioner",
+      "active": true
+    }
+  ],
+  "errors": null
+}
+```
+
+---
+
+## BE-25 [MVP] Technician hapus/nonaktifkan keahlian alat elektronik
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `DELETE /api/technicians/device-categories/{deviceCategoryId}`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Hanya technician yang boleh akses
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi UUID
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi relasi milik technician login
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Hapus memakai soft-disable `aktif = false`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Relasi tidak hilang dari database
+
+Contract:
+
+```http
+DELETE /api/technicians/device-categories/{deviceCategoryId}
+Authorization: Bearer {technicianToken}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Technician device category removed successfully",
+  "data": null,
+  "errors": null
+}
+```
+
+---
+
+# 3. Customer Technician Discovery
+
+Target: customer bisa mencari technician berdasarkan device category, filter/sort technician, dan melihat detail technician sebelum membuat service request.
+
+---
+
+## BE-30 [MVP] Search technician berdasarkan kategori alat elektronik
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `GET /api/customers/technicians?deviceCategoryId={deviceCategoryId}`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint hanya untuk customer yang sudah login
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tanpa token return `401`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Token technician return `403`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `deviceCategoryId` wajib
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi UUID
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi kategori ditemukan
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi kategori aktif dan belum soft delete
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tampilkan technician yang memiliki keahlian pada kategori tersebut
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Hanya tampilkan technician dengan relasi skill aktif
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Hanya tampilkan akun technician aktif
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response menggunakan field English
+
+Contract:
+
+```http
+GET /api/customers/technicians?deviceCategoryId=6e6349a8-e528-4a38-8b1a-6123c4f1c40d
+Authorization: Bearer {customerToken}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Technicians retrieved successfully",
+  "data": [
+    {
+      "technicianProfileId": "b15f2a79-3082-49f0-91e8-3c3f9037a2ba",
+      "name": "Technician Demo",
+      "profilePhoto": null,
+      "availabilityStatus": "OFFLINE",
+      "averageRating": 0.00,
+      "ratingCount": 0,
+      "totalJobs": 0,
+      "description": "Teknisi elektronik rumah tangga",
+      "supportedDeviceCategories": [
+        {
+          "deviceCategoryId": "6e6349a8-e528-4a38-8b1a-6123c4f1c40d",
+          "name": "Air Conditioner",
+          "icon": "air-conditioner"
+        }
+      ]
+    }
+  ],
+  "errors": null
+}
+```
+
+---
+
+## BE-31 [MVP] Filter technician berdasarkan availability status
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `GET /api/customers/technicians?deviceCategoryId={deviceCategoryId}&availabilityStatus=ONLINE`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Filter bersifat optional
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi invalid `availabilityStatus`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Error message menjelaskan allowed values
+
+Allowed values:
+
+```text
+ONLINE
+OFFLINE
+BUSY
+ON_LEAVE
+```
+
+Invalid response `400`:
+
+```json
+{
+  "success": false,
+  "message": "Invalid availabilityStatus. Allowed values: ONLINE, OFFLINE, BUSY, ON_LEAVE",
+  "data": null,
+  "errors": null
+}
+```
+
+---
+
+## BE-32 [MVP] Sort technician
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `GET /api/customers/technicians?deviceCategoryId={deviceCategoryId}&sort=rating`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sort bersifat optional
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sort berdasarkan rating
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sort berdasarkan total pekerjaan
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sort berdasarkan nama
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi invalid `sort`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Sort berdasarkan harga jika harga technician sudah tersedia
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Sort berdasarkan jarak jika latitude/longitude technician sudah tersedia
+
+Allowed values:
+
+```text
+rating
+totalJobs
+name
+```
+
+Default sort:
+
+```text
+averageRating DESC
+then totalJobs DESC
+then name ASC
+```
+
+Invalid response `400`:
+
+```json
+{
+  "success": false,
+  "message": "Invalid sort. Allowed values: rating, totalJobs, name",
+  "data": null,
+  "errors": null
+}
+```
+
+---
+
+## BE-33 [MVP] Detail technician untuk customer
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `GET /api/customers/technicians/{technicianProfileId}`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint hanya untuk customer yang sudah login
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tanpa token return `401`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Token technician return `403`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi UUID
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi technician ditemukan
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi akun technician aktif
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi role user `TECHNICIAN`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Return `supportedDeviceCategories`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Jangan tampilkan kategori yang tidak aktif atau sudah soft delete
+
+Contract:
+
+```http
+GET /api/customers/technicians/b15f2a79-3082-49f0-91e8-3c3f9037a2ba
+Authorization: Bearer {customerToken}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Technician retrieved successfully",
+  "data": {
+    "technicianProfileId": "b15f2a79-3082-49f0-91e8-3c3f9037a2ba",
+    "name": "Technician Demo",
+    "profilePhoto": null,
+    "availabilityStatus": "OFFLINE",
+    "averageRating": 0.00,
+    "ratingCount": 0,
+    "totalJobs": 0,
+    "description": "Teknisi elektronik rumah tangga",
+    "supportedDeviceCategories": [
+      {
+        "deviceCategoryId": "6e6349a8-e528-4a38-8b1a-6123c4f1c40d",
+        "name": "Air Conditioner",
+        "icon": "air-conditioner"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+---
+
+# 4. Service Request — Customer
+
+Target: customer bisa membuat, melihat, dan membatalkan service request. Customer memilih technician terlebih dahulu, lalu memilih satu atau lebih device category yang dikuasai technician tersebut.
+
+---
+
+## BE-40 [MVP] Customer membuat service request
+
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `POST /api/customers/service-requests`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint hanya untuk customer yang sudah login
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Tanpa token return `401`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Token technician return `403`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `technicianProfileId` wajib
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `technicianProfileId` harus UUID
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi technician ditemukan
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi akun technician aktif
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi role technician `TECHNICIAN`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `deviceCategoryIds` minimal 1
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `deviceCategoryIds` maksimal 10 item
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi semua device category UUID valid
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi tidak ada duplicate category
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi semua device category ditemukan, aktif, dan belum soft delete
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi technician memiliki semua skill sesuai `deviceCategoryIds`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `issueDescription` wajib
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi `address` wajib
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `addressDetail` opsional
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Simpan ke `permintaan_layanan`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Simpan selected categories ke `permintaan_layanan_kategori`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Status awal `WAITING`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `kode_permintaan` digenerate database
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `riwayat_status` dibuat otomatis oleh trigger database
+
+Contract:
+
+```http
+POST /api/customers/service-requests
+Authorization: Bearer {customerToken}
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "technicianProfileId": "b15f2a79-3082-49f0-91e8-3c3f9037a2ba",
+  "deviceCategoryIds": [
+    "6e6349a8-e528-4a38-8b1a-6123c4f1c40d"
+  ],
+  "issueDescription": "AC tidak dingin dan mengeluarkan suara berisik",
+  "address": "Jl. Contoh No. 123, Medan",
+  "addressDetail": "Rumah warna putih pagar hitam"
+}
+```
+
+Success `201`:
+
+```json
+{
+  "success": true,
+  "message": "Service request created successfully",
+  "data": {
+    "serviceRequestId": "52df9e18-79f4-47f2-9513-37f169bb680c",
+    "serviceRequestCode": "REQ-20260530-4EACD1E9",
+    "customerId": "437cb551-365e-4939-903f-ce9511a38a63",
+    "technicianProfileId": "b15f2a79-3082-49f0-91e8-3c3f9037a2ba",
+    "status": "WAITING",
+    "issueDescription": "AC tidak dingin dan mengeluarkan suara berisik",
+    "address": "Jl. Contoh No. 123, Medan",
+    "addressDetail": "Rumah warna putih pagar hitam",
+    "selectedDeviceCategories": [
+      {
+        "deviceCategoryId": "6e6349a8-e528-4a38-8b1a-6123c4f1c40d",
+        "name": "Air Conditioner",
+        "icon": "air-conditioner"
+      }
+    ],
+    "requestTime": "2026-05-30T02:53:04.917315284+07:00"
+  },
+  "errors": null
+}
+```
+
+Important error cases:
+
+```json
+{
+  "success": false,
+  "message": "Invalid technician profile id",
+  "data": null,
+  "errors": null
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Technician not found",
+  "data": null,
+  "errors": null
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Device category ids must not contain duplicate values",
+  "data": null,
+  "errors": null
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Technician does not support selected device category: Refrigerator",
+  "data": null,
+  "errors": null
+}
+```
+
+---
+
+## BE-41 [MVP] Customer lihat riwayat service request
+
+- ![ongoing](https://img.shields.io/badge/%5Bongoing%5D-blue?style=flat-square) Endpoint: `GET /api/customers/service-requests`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint hanya untuk customer login
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Technician token return `403`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Tanpa token return `401`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Hanya tampilkan request milik customer login
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Filter `status` opsional
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Sort `latest` atau `oldest`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Default sort terbaru
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Sertakan technician summary
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Sertakan selected device categories
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Jangan tampilkan request milik customer lain
+
+Planned contract:
+
+```http
+GET /api/customers/service-requests?status=WAITING&sort=latest
+Authorization: Bearer {customerToken}
+```
+
+Planned success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Service requests retrieved successfully",
+  "data": [
+    {
+      "serviceRequestId": "52df9e18-79f4-47f2-9513-37f169bb680c",
+      "serviceRequestCode": "REQ-20260530-4EACD1E9",
+      "customerId": "437cb551-365e-4939-903f-ce9511a38a63",
+      "technicianProfileId": "b15f2a79-3082-49f0-91e8-3c3f9037a2ba",
+      "technicianName": "Technician Demo",
+      "status": "WAITING",
+      "issueDescription": "AC tidak dingin dan mengeluarkan suara berisik",
+      "address": "Jl. Contoh No. 123, Medan",
+      "addressDetail": "Rumah warna putih pagar hitam",
+      "selectedDeviceCategories": [
+        {
+          "deviceCategoryId": "6e6349a8-e528-4a38-8b1a-6123c4f1c40d",
+          "name": "Air Conditioner",
+          "icon": "air-conditioner"
+        }
+      ],
+      "requestTime": "2026-05-30T02:53:04.917315284+07:00"
+    }
+  ],
+  "errors": null
+}
+```
+
+---
+
+## BE-42 [MVP] Customer lihat detail service request
+
+- ![ongoing](https://img.shields.io/badge/%5Bongoing%5D-blue?style=flat-square) Endpoint: `GET /api/customers/service-requests/{serviceRequestId}`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint hanya untuk customer login
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Validasi UUID
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Jika UUID invalid return `400`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Jika request tidak ditemukan return `404`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Jika request bukan milik customer login return `404`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Return detail service request
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Return selected device categories
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Return technician summary
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Return status history jika frontend membutuhkan di detail
+
+Planned contract:
+
+```http
+GET /api/customers/service-requests/52df9e18-79f4-47f2-9513-37f169bb680c
+Authorization: Bearer {customerToken}
+```
+
+---
+
+## BE-43 [NEXT] Customer batalkan service request
+
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `PATCH /api/customers/service-requests/{serviceRequestId}/cancel`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Hanya customer pemilik request
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Hanya boleh jika status `WAITING`, `ACCEPTED`, atau `ON_PROGRESS`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Tidak boleh cancel status final `COMPLETED`, `CANCELLED`, `REJECTED`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Simpan `cancelReason`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Update status `CANCELLED`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Isi `diubahOlehTerakhir`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) DB trigger otomatis membuat status history
+
+Planned contract:
+
+```http
+PATCH /api/customers/service-requests/{serviceRequestId}/cancel
+Authorization: Bearer {customerToken}
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "reason": "Saya ingin membatalkan permintaan"
+}
+```
+
+---
+
+# 5. Service Request — Technician
 
 Target: technician bisa melihat request masuk yang memang ditujukan kepadanya, lalu menerima, menolak, memulai, dan menyelesaikan layanan.
 
 Catatan:
-- Karena customer sudah memilih technician sebelum membuat request, technician tidak lagi mengambil request bebas dari kategori.
-- Request masuk adalah request `WAITING` yang `technicianProfileId`-nya sama dengan technician login.
 
-- [ ] **BE-60 [MVP] Technician lihat request masuk**
-  - Endpoint: `GET /api/technicians/service-requests/incoming`
-  - [ ] Hanya technician login
-  - [ ] Tampilkan request `WAITING` yang ditujukan ke technician login
-  - [ ] Sertakan data customer
-  - [ ] Sertakan `selectedDeviceCategories`
-  - [ ] Sertakan `issueDescription`
-  - [ ] Bisa pagination
-  - [ ] Urutkan dari terbaru
-
-- [ ] **BE-61 [MVP] Technician lihat detail request**
-  - Endpoint: `GET /api/technicians/service-requests/{serviceRequestId}`
-  - [ ] Validasi technician adalah technician yang dipilih pada request
-  - [ ] Return data customer
-  - [ ] Return lokasi
-  - [ ] Return `selectedDeviceCategories`
-  - [ ] Return `issueDescription`
-  - [ ] Return status
-
-- [ ] **BE-62 [MVP] Technician accept request**
-  - Endpoint: `PATCH /api/technicians/service-requests/{serviceRequestId}/accept`
-  - [ ] Hanya technician login
-  - [ ] Request harus `WAITING`
-  - [ ] Request harus ditujukan ke technician login
-  - [ ] Validasi technician masih memiliki semua keahlian untuk selectedDeviceCategories
-  - [ ] Set status `ACCEPTED`
-  - [ ] Isi `acceptedAt`
-  - [ ] Set status technician `BUSY` jika perlu
-  - [ ] Catat riwayat status
-  - [ ] Buat notifikasi ke customer
-
-- [ ] **BE-63 [MVP] Technician reject request**
-  - Endpoint: `PATCH /api/technicians/service-requests/{serviceRequestId}/reject`
-  - [ ] Request harus `WAITING`
-  - [ ] Request harus ditujukan ke technician login
-  - [ ] Simpan `rejectReason` jika ada
-  - [ ] Status menjadi `REJECTED`
-  - [ ] Tidak mengubah technician menjadi busy
-  - [ ] Catat riwayat status
-  - [ ] Buat notifikasi ke customer
-
-- [ ] **BE-64 [MVP] Technician mulai pengerjaan**
-  - Endpoint: `PATCH /api/technicians/service-requests/{serviceRequestId}/start`
-  - [ ] Request harus `ACCEPTED`
-  - [ ] Hanya technician yang dipilih pada request
-  - [ ] Status menjadi `ON_PROGRESS`
-  - [ ] Isi `processedAt`
-  - [ ] Catat riwayat status
-  - [ ] Buat notifikasi ke customer
-
-- [ ] **BE-65 [MVP] Technician selesaikan pengerjaan**
-  - Endpoint: `PATCH /api/technicians/service-requests/{serviceRequestId}/complete`
-  - [ ] Request harus `ON_PROGRESS`
-  - [ ] Hanya technician yang dipilih pada request
-  - [ ] Status menjadi `COMPLETED`
-  - [ ] Isi `completedAt`
-  - [ ] Tambah `totalJobs`
-  - [ ] Status technician kembali `ONLINE` jika perlu
-  - [ ] Catat riwayat status
-  - [ ] Buat notifikasi ke customer
-
-- [ ] **BE-66 [NEXT] Technician isi estimasi biaya**
-  - Endpoint: `PATCH /api/technicians/service-requests/{serviceRequestId}/estimate`
-  - [ ] Hanya technician terkait
-  - [ ] Estimasi biaya tidak boleh negatif
-  - [ ] Simpan `estimatedCost`
-
-- [ ] **BE-67 [MVP] Technician isi biaya akhir dan catatan**
-  - Endpoint: `PATCH /api/technicians/service-requests/{serviceRequestId}/finalize`
-  - [ ] Hanya technician terkait
-  - [ ] Final cost tidak boleh negatif
-  - [ ] Simpan `finalCost`
-  - [ ] Simpan `technicianNote`
+- Karena customer sudah memilih technician sebelum membuat request, technician tidak mengambil request bebas dari kategori.
+- Request masuk adalah request yang `technicianProfileId`-nya sama dengan technician login.
 
 ---
 
-## 7. Status dan Riwayat Status
+## BE-50 [MVP] Technician lihat request masuk / request miliknya
+
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `GET /api/technicians/service-requests`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Hanya technician login
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Customer token return `403`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Tanpa token return `401`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Ambil `TeknisiProfile` dari user login
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Tampilkan request untuk technician tersebut
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Bisa filter status `WAITING`, `ACCEPTED`, `ON_PROGRESS`, `COMPLETED`, `CANCELLED`, `REJECTED`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Sort `latest` atau `oldest`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Sertakan customer summary
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Sertakan selected device categories
+
+Planned contract:
+
+```http
+GET /api/technicians/service-requests?status=WAITING&sort=latest
+Authorization: Bearer {technicianToken}
+```
+
+---
+
+## BE-51 [MVP] Technician lihat detail request
+
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `GET /api/technicians/service-requests/{serviceRequestId}`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Validasi technician adalah technician yang dipilih pada request
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Jika bukan milik technician login return `404`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Return data customer
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Return lokasi
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Return `selectedDeviceCategories`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Return `issueDescription`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Return status
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Return status history jika dibutuhkan
+
+Planned contract:
+
+```http
+GET /api/technicians/service-requests/{serviceRequestId}
+Authorization: Bearer {technicianToken}
+```
+
+---
+
+## BE-52 [MVP] Technician accept request
+
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `PATCH /api/technicians/service-requests/{serviceRequestId}/accept`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Hanya technician login
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Request harus `WAITING`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Request harus ditujukan ke technician login
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Validasi technician masih memiliki semua skill untuk selectedDeviceCategories
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Set status `ACCEPTED`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Isi `diubahOlehTerakhir`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) DB trigger otomatis isi `waktuDiterima`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) DB trigger otomatis insert status history
+
+Planned contract:
+
+```http
+PATCH /api/technicians/service-requests/{serviceRequestId}/accept
+Authorization: Bearer {technicianToken}
+```
+
+---
+
+## BE-53 [MVP] Technician reject request
+
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `PATCH /api/technicians/service-requests/{serviceRequestId}/reject`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Request harus `WAITING`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Request harus ditujukan ke technician login
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Simpan `rejectReason` jika ada
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Status menjadi `REJECTED`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) DB trigger otomatis isi `waktuDitolak`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) DB trigger otomatis insert status history
+
+Planned contract:
+
+```http
+PATCH /api/technicians/service-requests/{serviceRequestId}/reject
+Authorization: Bearer {technicianToken}
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "reason": "Jadwal teknisi penuh"
+}
+```
+
+---
+
+## BE-54 [MVP] Technician mulai pengerjaan
+
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `PATCH /api/technicians/service-requests/{serviceRequestId}/start`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Request harus `ACCEPTED`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Hanya technician yang dipilih pada request
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Status menjadi `ON_PROGRESS`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) DB trigger otomatis isi `waktuDiproses`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) DB trigger otomatis insert status history
+
+Planned contract:
+
+```http
+PATCH /api/technicians/service-requests/{serviceRequestId}/start
+Authorization: Bearer {technicianToken}
+```
+
+---
+
+## BE-55 [MVP] Technician selesaikan pengerjaan
+
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `PATCH /api/technicians/service-requests/{serviceRequestId}/complete`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Request harus `ON_PROGRESS`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Hanya technician yang dipilih pada request
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Status menjadi `COMPLETED`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Simpan `technicianNote` jika dikirim
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Simpan `finalCost` jika dikirim
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Final cost tidak boleh negatif
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Tambah `totalJobs` technician
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) DB trigger otomatis isi `waktuSelesai`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) DB trigger otomatis insert status history
+
+Planned contract:
+
+```http
+PATCH /api/technicians/service-requests/{serviceRequestId}/complete
+Authorization: Bearer {technicianToken}
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "technicianNote": "AC sudah dibersihkan dan freon dicek",
+  "finalCost": 150000
+}
+```
+
+---
+
+# 6. Status dan Riwayat Status
 
 Target: semua perubahan status service request tercatat dan bisa dilihat sebagai timeline.
 
-- [ ] **BE-70 [MVP] Lihat timeline status request**
-  - Endpoint: `GET /api/service-requests/{serviceRequestId}/status-history`
-  - [ ] Validasi user berhak melihat request
-  - [ ] Return `previousStatus`
-  - [ ] Return `newStatus`
-  - [ ] Return `note`
-  - [ ] Return `changedAt`
-  - [ ] Return `changedBy`
+---
 
-- [ ] **BE-71 [MVP] Catat siapa pengubah status**
-  - [ ] Simpan `lastChangedBy`
-  - [ ] Simpan `changedBy` di riwayat status
-  - [ ] Customer tercatat saat cancel
-  - [ ] Technician tercatat saat accept/reject/start/complete
+## BE-60 [MVP] Trigger status flow service request
 
-- [ ] **BE-72 [MVP] Validasi transisi status**
-  - [ ] `WAITING` boleh ke `ACCEPTED`
-  - [ ] `WAITING` boleh ke `REJECTED`
-  - [ ] `WAITING` boleh ke `CANCELLED`
-  - [ ] `ACCEPTED` boleh ke `ON_PROGRESS`
-  - [ ] `ACCEPTED` boleh ke `CANCELLED`
-  - [ ] `ON_PROGRESS` boleh ke `COMPLETED`
-  - [ ] Status final tidak bisa diubah lagi
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Initial status harus `WAITING`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `WAITING` boleh ke `ACCEPTED`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `WAITING` boleh ke `REJECTED`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `WAITING` boleh ke `CANCELLED`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `ACCEPTED` boleh ke `ON_PROGRESS`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `ACCEPTED` boleh ke `CANCELLED`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `ON_PROGRESS` boleh ke `COMPLETED`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `ON_PROGRESS` boleh ke `CANCELLED`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Status final tidak bisa diubah lagi
 
-- [ ] **BE-73 [MVP] Simpan waktu status**
-  - [ ] `acceptedAt` saat accepted
-  - [ ] `processedAt` saat on progress
-  - [ ] `completedAt` saat completed
-  - [ ] `cancelledAt` saat cancelled
+Final statuses:
 
-- [ ] **BE-74 [MVP] Blok perubahan status final**
-  - [ ] `COMPLETED` tidak bisa diubah
-  - [ ] `CANCELLED` tidak bisa diubah
-  - [ ] `REJECTED` tidak bisa diubah
+```text
+COMPLETED
+CANCELLED
+REJECTED
+```
 
 ---
 
-## 8. Chat REST
+## BE-61 [MVP] Trigger status history otomatis
 
-Target: customer dan technician terkait service request bisa berkomunikasi lewat REST API dulu sebelum WebSocket.
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Saat insert service request, otomatis insert row ke `riwayat_status`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Saat status berubah, otomatis insert row ke `riwayat_status`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `status_sebelum` tersimpan
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `status_sesudah` tersimpan
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) `diubah_oleh` tersimpan dari `diubah_oleh_terakhir`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sudah dites: create request menghasilkan `WAITING` history
 
-- [ ] **BE-80 [MVP] Kirim pesan text**
-  - Endpoint: `POST /api/service-requests/{serviceRequestId}/messages`
-  - [ ] Validasi user bagian dari request
-  - [ ] Pesan text wajib punya `message`
-  - [ ] Message type `TEXT`
-  - [ ] Simpan sender
-  - [ ] Simpan `sentAt`
+Catatan penting:
 
-- [ ] **BE-81 [MVP] Ambil riwayat chat**
-  - Endpoint: `GET /api/service-requests/{serviceRequestId}/messages`
-  - [ ] Validasi user bagian dari request
-  - [ ] Urutkan dari pesan lama ke baru
-  - [ ] Bisa pagination
-  - [ ] Jangan tampilkan pesan yang soft deleted
-
-- [ ] **BE-82 [NEXT] Kirim pesan gambar/file URL**
-  - Endpoint: `POST /api/service-requests/{serviceRequestId}/messages/media`
-  - [ ] Validasi `fileUrl`
-  - [ ] Message type `IMAGE`
-  - [ ] Simpan sender
-  - [ ] Simpan `sentAt`
-
-- [ ] **BE-83 [NEXT] Tandai pesan sudah dibaca**
-  - Endpoint: `PATCH /api/messages/{messageId}/read`
-  - [ ] Validasi penerima pesan
-  - [ ] Isi `readAt`
-  - [ ] Tidak perlu ubah kalau sudah dibaca
-
-- [ ] **BE-84 [MVP] Validasi akses chat**
-  - [ ] Customer hanya bisa chat pada request miliknya
-  - [ ] Technician hanya bisa chat pada request yang ditujukan kepadanya
-  - [ ] User lain tidak boleh akses chat request tersebut
+- Jangan insert `RiwayatStatus` manual dari Java saat create/update status.
+- Database trigger sudah menangani status history.
 
 ---
 
-## 9. Notifikasi
+## BE-62 [NEXT] API lihat timeline status request
 
-Target: user bisa melihat notifikasi perubahan status dan pesan baru.
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint customer: `GET /api/customers/service-requests/{serviceRequestId}/status-history`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint technician: `GET /api/technicians/service-requests/{serviceRequestId}/status-history`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Customer hanya bisa melihat history request miliknya
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Technician hanya bisa melihat history request yang ditujukan kepadanya
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Sort by `createdAt ASC`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Response field English
 
-- [ ] **BE-90 [MVP] List notifikasi user**
-  - Endpoint: `GET /api/notifications`
-  - [ ] Hanya notifikasi milik user login
-  - [ ] Urutkan terbaru
-  - [ ] Bisa pagination
+Planned response item:
 
-- [ ] **BE-91 [MVP] Hitung notifikasi belum dibaca**
-  - Endpoint: `GET /api/notifications/unread-count`
-  - [ ] Hitung `readAt IS NULL`
-  - [ ] Hanya milik user login
-
-- [ ] **BE-92 [MVP] Tandai satu notifikasi dibaca**
-  - Endpoint: `PATCH /api/notifications/{notificationId}/read`
-  - [ ] Validasi notifikasi milik user
-  - [ ] Isi `readAt`
-
-- [ ] **BE-93 [NEXT] Tandai semua notifikasi dibaca**
-  - Endpoint: `PATCH /api/notifications/read-all`
-  - [ ] Update semua notifikasi user login
-  - [ ] Hanya yang belum dibaca
-
-- [ ] **BE-94 [MVP] Buat notifikasi saat status berubah**
-  - [ ] Saat customer membuat request, technician dapat notifikasi
-  - [ ] Saat technician menerima request, customer dapat notifikasi
-  - [ ] Saat technician menolak request, customer dapat notifikasi
-  - [ ] Saat technician mulai kerja, customer dapat notifikasi
-  - [ ] Saat technician menyelesaikan request, customer dapat notifikasi
-  - [ ] Saat customer membatalkan request, technician dapat notifikasi
-
-- [ ] **BE-95 [NEXT] Buat notifikasi saat pesan baru**
-  - [ ] Saat customer kirim pesan, technician dapat notifikasi
-  - [ ] Saat technician kirim pesan, customer dapat notifikasi
-  - [ ] Reference type `CHAT`
+```json
+{
+  "statusHistoryId": "uuid",
+  "previousStatus": null,
+  "newStatus": "WAITING",
+  "note": "Service request created",
+  "changedByUserId": "uuid",
+  "changedAt": "timestamp"
+}
+```
 
 ---
 
-## 10. Review
+# 7. Profil User dan Technician
+
+Target: customer dan technician bisa melihat serta mengubah profil dasar. Technician juga bisa mengatur availability status.
+
+---
+
+## BE-70 [MVP] Update profil sendiri
+
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `PUT /api/users/me`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Bisa update `name`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Bisa update `phoneNumber`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Bisa update `profilePhoto`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Bisa update `address`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Validasi phone number jika berubah
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Response menggunakan field English
+
+Planned contract:
+
+```http
+PUT /api/users/me
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "name": "Nama Baru",
+  "phoneNumber": "+6281234567890",
+  "profilePhoto": "https://example.com/photo.jpg",
+  "address": "Alamat baru"
+}
+```
+
+---
+
+## BE-71 [NEXT] Technician update availability status
+
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `PATCH /api/technicians/availability`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Hanya technician yang boleh akses
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Customer token return `403`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Tanpa token return `401`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Validasi invalid status
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Update `status_ketersediaan` di `teknisi_profile`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Response menggunakan field English
+
+Allowed values:
+
+```text
+ONLINE
+OFFLINE
+BUSY
+ON_LEAVE
+```
+
+Planned contract:
+
+```http
+PATCH /api/technicians/availability
+Authorization: Bearer {technicianToken}
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "availabilityStatus": "ONLINE"
+}
+```
+
+---
+
+## BE-72 [NEXT] Technician update deskripsi profil
+
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `PUT /api/technicians/profile`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Bisa update `description`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Bisa update profile photo lewat data user
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Response menggunakan field English
+
+---
+
+# 8. Review
 
 Target: customer bisa memberi rating setelah service request selesai.
 
-- [ ] **BE-100 [MVP] Customer membuat review**
-  - Endpoint: `POST /api/service-requests/{serviceRequestId}/review`
-  - [ ] Request harus milik customer
-  - [ ] Request harus `COMPLETED`
-  - [ ] Rating wajib 1 sampai 5
-  - [ ] Comment opsional
-  - [ ] Satu request hanya boleh satu review
+Catatan:
 
-- [ ] **BE-101 [MVP] Validasi request completed**
-  - [ ] Kalau belum selesai, return error
-  - [ ] Kalau cancelled/rejected, tidak boleh review
-
-- [ ] **BE-102 [MVP] Validasi satu request satu review**
-  - [ ] Cek review berdasarkan `serviceRequestId`
-  - [ ] Jika sudah ada, return error
-
-- [ ] **BE-103 [NEXT] Lihat review technician**
-  - Endpoint: `GET /api/customers/technicians/{technicianProfileId}/reviews`
-  - [ ] Return daftar review
-  - [ ] Return nama customer jika boleh
-  - [ ] Return rating
-  - [ ] Return comment
-  - [ ] Bisa pagination
-
-- [ ] **BE-104 [MVP] Update rating rata-rata technician**
-  - [ ] Hitung ulang `averageRating`
-  - [ ] Update `averageRating`
-  - [ ] Update `ratingCount`
-
-- [ ] **BE-105 [MVP] Tampilkan rating di profil technician**
-  - [ ] Include averageRating di endpoint detail technician
-  - [ ] Include ratingCount
-  - [ ] Include totalJobs
+- Jika tabel review belum ada di schema final, buat migration baru terlebih dahulu.
+- Review boleh masuk MVP setelah flow request customer-technician selesai.
 
 ---
 
-## 11. Log Aktivitas
+## BE-80 [MVP] Review schema
 
-Target: aktivitas penting tersimpan untuk audit.
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Buat tabel `review`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Relasi ke `permintaan_layanan`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Relasi ke customer
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Relasi ke technician profile
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Rating 1 sampai 5
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Satu request hanya boleh satu review
 
-- [ ] **BE-110 [PLUS] Log saat login**
-  - [ ] Simpan `userId`
-  - [ ] Simpan activity `LOGIN`
-  - [ ] Simpan IP address jika tersedia
-  - [ ] Simpan user agent jika tersedia
+Candidate columns:
 
-- [ ] **BE-111 [PLUS] Log saat buat request**
-  - [ ] Simpan activity `CREATE_SERVICE_REQUEST`
-  - [ ] Simpan metadata `serviceRequestId`
-  - [ ] Simpan `selectedDeviceCategories`
-
-- [ ] **BE-112 [PLUS] Log saat update status**
-  - [ ] Simpan activity `UPDATE_SERVICE_REQUEST_STATUS`
-  - [ ] Simpan `previousStatus`
-  - [ ] Simpan `newStatus`
-
-- [ ] **BE-113 [PLUS] Log saat logout**
-  - [ ] Simpan activity `LOGOUT`
-  - [ ] Simpan sessionId jika perlu
-
-- [ ] **BE-114 [LATER] Endpoint lihat log untuk admin**
-  - Endpoint: `GET /api/admin/activity-logs`
-  - [ ] Hanya admin
-  - [ ] Bisa filter tanggal
-  - [ ] Bisa filter user
-  - [ ] Bisa filter activity
+```text
+id_review
+id_permintaan
+id_customer
+id_teknisi_profile
+rating
+comment
+created_at
+updated_at
+deleted_at
+```
 
 ---
 
-## 12. WebSocket
+## BE-81 [MVP] Customer membuat review
 
-Target: fitur real-time dikerjakan setelah REST API stabil.
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `POST /api/customers/service-requests/{serviceRequestId}/review`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Request harus milik customer login
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Request harus `COMPLETED`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Rating wajib 1 sampai 5
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Comment opsional
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Satu request hanya boleh satu review
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Update `ratingAvg` technician
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Update `ratingCount` technician
 
-- [ ] **BE-85 [LATER] WebSocket chat real-time**
-  - Endpoint WS: `/ws/chat`
-  - [ ] Setup WebSocket config
-  - [ ] Setup STOMP jika digunakan
-  - [ ] Buat room berdasarkan `serviceRequestId`
-  - [ ] Broadcast pesan baru ke room request
+Planned contract:
 
-- [ ] **BE-86 [LATER] Broadcast pesan baru**
-  - [ ] Saat pesan tersimpan, kirim event ke WebSocket
-  - [ ] Customer menerima pesan technician
-  - [ ] Technician menerima pesan customer
+```http
+POST /api/customers/service-requests/{serviceRequestId}/review
+Authorization: Bearer {customerToken}
+Content-Type: application/json
+```
 
-- [ ] **BE-96 [LATER] WebSocket notifikasi**
-  - Endpoint WS: `/ws/notification`
-  - [ ] Kirim notifikasi status request
-  - [ ] Kirim notifikasi pesan baru
-  - [ ] Kirim unread count update
+Request:
 
----
-
-## 13. Admin Opsional
-
-Catatan: role `ADMIN` ada di backend, tapi fokus utama masih customer dan technician. Kerjakan admin hanya kalau MVP sudah aman.
-
-- [ ] **BE-120 [LATER] Admin CRUD kategori alat elektronik**
-  - Endpoint: `/api/admin/device-categories`
-  - [ ] Create device category
-  - [ ] Update device category
-  - [ ] Nonaktifkan device category
-  - [ ] List semua device category termasuk nonaktif
-
-- [ ] **BE-121 [LATER] Admin kelola keahlian technician**
-  - Endpoint: `/api/admin/technicians/{technicianProfileId}/device-categories`
-  - [ ] Tambah keahlian technician
-  - [ ] Hapus/nonaktifkan keahlian technician
-  - [ ] List keahlian technician
-  - [ ] Validasi category aktif
-
-- [ ] **BE-122 [LATER] Admin lihat semua user**
-  - Endpoint: `GET /api/admin/users`
-  - [ ] Filter role
-  - [ ] Filter accountStatus
-  - [ ] Search name/email
-
-- [ ] **BE-123 [LATER] Admin nonaktifkan user**
-  - Endpoint: `PATCH /api/admin/users/{userId}/disable`
-  - [ ] Set accountStatus
-  - [ ] Cegah user login jika inactive/banned
-
-- [ ] **BE-124 [LATER] Admin lihat semua service request**
-  - Endpoint: `GET /api/admin/service-requests`
-  - [ ] Filter status
-  - [ ] Filter tanggal
-  - [ ] Filter technician
-  - [ ] Filter customer
-  - [ ] Filter device category
-
-- [ ] **BE-125 [LATER] Admin dashboard sederhana**
-  - Endpoint: `GET /api/admin/dashboard`
-  - [ ] Total user
-  - [ ] Total technician
-  - [ ] Total service request
-  - [ ] Total completed request
-  - [ ] Total waiting request
-  - [ ] Rating rata-rata technician
+```json
+{
+  "rating": 5,
+  "comment": "Teknisi ramah dan pengerjaan cepat"
+}
+```
 
 ---
 
-## Checklist Definisi Selesai per Fitur
+## BE-82 [NEXT] Lihat review technician
 
-Satu fitur dianggap selesai kalau:
-
-- [ ] Endpoint bisa dipanggil via Postman/curl
-- [ ] Request DTO sudah divalidasi
-- [ ] Response sukses rapi
-- [ ] Response error rapi
-- [ ] Data tersimpan/terambil dari database dengan benar
-- [ ] Role access sudah sesuai
-- [ ] Data keluar/masuk API menggunakan English
-- [ ] Tidak ada data sensitif bocor di response
-- [ ] Minimal ada 1 test manual yang berhasil
-- [ ] Commit Git sudah dibuat
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `GET /api/customers/technicians/{technicianProfileId}/reviews`
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Return daftar review technician
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Bisa pagination
+- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Response menggunakan field English
 
 ---
 
-## Catatan untuk API_CONTRACT.md
+# 9. Chat REST dan WebSocket
 
-Dokumen API detail dibuat terpisah supaya README tetap fokus sebagai roadmap.
+Target: customer dan technician terkait service request bisa berkomunikasi. Untuk MVP awal, fitur ini bisa ditunda sampai flow service request stabil.
 
-`API_CONTRACT.md` nanti berisi:
-- daftar endpoint resmi
-- HTTP method
-- auth requirement
-- request body
-- response body
-- contoh response sukses
-- contoh response error
-- aturan validasi
-- status code
+---
+
+## BE-90 [LATER] Kirim pesan text via REST
+
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint: `POST /api/service-requests/{serviceRequestId}/messages`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Validasi user bagian dari request
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Pesan text wajib punya `message`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Message type `TEXT`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Simpan sender
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Simpan `sentAt`
+
+---
+
+## BE-91 [LATER] Ambil riwayat chat
+
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint: `GET /api/service-requests/{serviceRequestId}/messages`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Validasi user bagian dari request
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Urutkan dari pesan lama ke baru
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Bisa pagination
+
+---
+
+## BE-92 [LATER] WebSocket chat real-time
+
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint WS: `/ws`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Buat room berdasarkan `serviceRequestId`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Broadcast pesan baru ke customer dan technician terkait
+
+---
+
+# 10. Notifikasi
+
+Target: user bisa melihat notifikasi perubahan status dan pesan baru. Untuk MVP awal, fitur ini bisa ditunda dan frontend dapat melakukan refresh manual.
+
+---
+
+## BE-100 [LATER] List notifikasi user
+
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint: `GET /api/notifications`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Hanya notifikasi milik user login
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Urutkan terbaru
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Bisa pagination
+
+---
+
+## BE-101 [LATER] Tandai notifikasi dibaca
+
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint: `PATCH /api/notifications/{notificationId}/read`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Validasi notifikasi milik user
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Isi `readAt`
+
+---
+
+## BE-102 [LATER] Buat notifikasi saat status berubah
+
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Saat customer membuat request, technician dapat notifikasi
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Saat technician menerima request, customer dapat notifikasi
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Saat technician menolak request, customer dapat notifikasi
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Saat technician mulai kerja, customer dapat notifikasi
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Saat technician menyelesaikan request, customer dapat notifikasi
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Saat customer membatalkan request, technician dapat notifikasi
+
+---
+
+# 11. Admin Opsional
+
+Catatan: role `ADMIN` ada di backend, tapi fokus utama MVP stable adalah customer dan technician. Admin dikerjakan setelah flow utama stabil.
+
+---
+
+## BE-110 [LATER] Admin CRUD device category
+
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint: `GET /api/admin/device-categories`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint: `POST /api/admin/device-categories`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint: `PATCH /api/admin/device-categories/{deviceCategoryId}`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint: `DELETE /api/admin/device-categories/{deviceCategoryId}`
+
+---
+
+## BE-111 [LATER] Admin lihat semua user
+
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint: `GET /api/admin/users`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Filter role
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Filter accountStatus
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Search name/email
+
+---
+
+## BE-112 [LATER] Admin lihat semua service request
+
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Endpoint: `GET /api/admin/service-requests`
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Filter status
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Filter tanggal
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Filter technician
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Filter customer
+- ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Filter device category
+
+---
+
+# 12. Ringkasan Contract API
+
+## 12.1 Endpoint yang sudah dibuat
+
+### Auth
+
+```text
+POST /api/auth/register/customer
+POST /api/auth/register/technician
+POST /api/auth/login
+GET  /api/auth/profile
+```
+
+### Device Category
+
+```text
+GET /api/device-categories
+GET /api/device-categories/{deviceCategoryId}
+```
+
+### Technician Device Category
+
+```text
+GET    /api/technicians/device-categories
+POST   /api/technicians/device-categories
+DELETE /api/technicians/device-categories/{deviceCategoryId}
+```
+
+### Customer Technician Discovery
+
+```text
+GET /api/customers/technicians
+GET /api/customers/technicians/{technicianProfileId}
+```
+
+### Customer Service Request
+
+```text
+POST /api/customers/service-requests
+```
+
+---
+
+## 12.2 Endpoint yang akan dibuat berikutnya
+
+### Customer Service Request
+
+```text
+GET   /api/customers/service-requests
+GET   /api/customers/service-requests/{serviceRequestId}
+PATCH /api/customers/service-requests/{serviceRequestId}/cancel
+GET   /api/customers/service-requests/{serviceRequestId}/status-history
+POST  /api/customers/service-requests/{serviceRequestId}/review
+```
+
+### Technician Service Request
+
+```text
+GET   /api/technicians/service-requests
+GET   /api/technicians/service-requests/{serviceRequestId}
+PATCH /api/technicians/service-requests/{serviceRequestId}/accept
+PATCH /api/technicians/service-requests/{serviceRequestId}/reject
+PATCH /api/technicians/service-requests/{serviceRequestId}/start
+PATCH /api/technicians/service-requests/{serviceRequestId}/complete
+GET   /api/technicians/service-requests/{serviceRequestId}/status-history
+```
+
+### User / Technician Profile
+
+```text
+PUT   /api/users/me
+PATCH /api/technicians/availability
+PUT   /api/technicians/profile
+```
+
+### Review
+
+```text
+GET /api/customers/technicians/{technicianProfileId}/reviews
+```
+
+### Deferred
+
+```text
+POST  /api/auth/refresh
+POST  /api/auth/logout
+GET   /api/notifications
+PATCH /api/notifications/{notificationId}/read
+GET   /api/admin/users
+GET   /api/admin/service-requests
+```
+
+---
+
+# 13. Security Contract
+
+## Public
+
+```text
+POST /api/auth/register/customer
+POST /api/auth/register/technician
+POST /api/auth/login
+GET  /api/device-categories
+GET  /api/device-categories/{deviceCategoryId}
+GET  /actuator/health
+GET  /actuator/info
+```
+
+## Authenticated
+
+```text
+GET /api/auth/profile
+```
+
+## CUSTOMER only
+
+```text
+/api/customers/**
+```
+
+## TECHNICIAN only
+
+```text
+/api/technicians/**
+```
+
+## ADMIN only
+
+```text
+/api/admin/**
+```
+
+---
+
+# 14. Testing Checklist per Endpoint
+
+Setiap endpoint baru wajib dites minimal:
+
+- [ ] Success case
+- [ ] Tanpa token jika endpoint protected
+- [ ] Wrong role jika endpoint role-based
+- [ ] Invalid UUID jika endpoint memakai path/query UUID
+- [ ] Not found jika data tidak ada
+- [ ] Forbidden ownership jika data bukan milik user login
+- [ ] Validation error jika request body tidak valid
+- [ ] Invalid enum jika memakai enum
+- [ ] Invalid status transition jika endpoint update status
+- [ ] Response sukses memakai `ApiResponse`
+- [ ] Response error memakai `ApiResponse`
+
+---
+
+# 15. Urutan Pengerjaan Terdekat
+
+Urutan paling aman dari posisi sekarang:
+
+```text
+1. BE-41 Customer List Service Requests
+2. BE-42 Customer Detail Service Request
+3. BE-50 Technician List Service Requests
+4. BE-51 Technician Detail Service Request
+5. BE-52 Technician Accept Request
+6. BE-53 Technician Reject Request
+7. BE-54 Technician Start Work
+8. BE-55 Technician Complete Work
+9. BE-62 Status History Read API
+10. BE-71 Technician Availability
+11. BE-80 Review Schema
+12. BE-81 Create Review
+```
+
+---
+
+# 16. Catatan Penting untuk Tim
+
+- Jangan pakai `JenisLayanan` untuk flow MVP stable.
+- Jangan buat endpoint khusus desktop atau khusus Android.
+- Jangan expose entity JPA langsung ke response.
+- Jangan insert status history manual saat create/update status request, karena database trigger sudah menangani.
+- Semua API field harus English.
+- Semua response harus memakai `ApiResponse<T>`.
+- Semua protected endpoint harus dites `401` dan `403`.
+- Commit per phase supaya mudah rollback.
+- Jangan commit file lokal seperti `.env`, `.idea`, `.vscode`, `bin`, `build`, atau file SQL session lokal.
+
+---
+
+# 17. Commit Convention
+
+Contoh commit per phase:
+
+```bash
+git add .
+git commit -m "phase 3f add customer service request creation api"
+```
+
+Contoh commit dokumentasi:
+
+```bash
+git add Readme.md
+git commit -m "docs update backend roadmap and api contract"
+```
