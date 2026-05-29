@@ -1,14 +1,23 @@
 package com.teknisio.model.entities;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcType;
-import org.hibernate.dialect.PostgreSQLEnumJdbcType;
-import org.hibernate.annotations.UpdateTimestamp;
-
+import com.teknisio.model.entities.base.BaseSoftDeletableAuditableEntity;
 import com.teknisio.model.enums.UserRole;
 import com.teknisio.model.enums.UserStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -20,52 +29,42 @@ import java.util.UUID;
 @Builder
 @Entity
 @Table(name = "users")
-public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id_user", nullable = false, updatable = false)
-    private UUID idUser;
+public class User extends BaseSoftDeletableAuditableEntity {
 
-    @Column(name = "nama", nullable = false, length = 100)
-    private String nama;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(name = "id_user", nullable = false, updatable = false)
+  private UUID idUser;
 
-    @Column(name = "email", nullable = false, length = 100)
-    private String email;
+  @Column(name = "nama", nullable = false, length = 100)
+  private String nama;
 
-    @Column(name = "no_telepon", nullable = false, length = 20)
-    private String noTelepon;
+  @Column(name = "email", nullable = false, length = 100)
+  private String email;
 
-    @Column(name = "password_hash", nullable = false, columnDefinition = "TEXT")
-    private String passwordHash;
+  @Column(name = "no_telepon", nullable = false, length = 20)
+  private String noTelepon;
 
-    @Column(name = "foto_profil", columnDefinition = "TEXT")
-    private String fotoProfil;
+  @Column(name = "password_hash", nullable = false, columnDefinition = "TEXT")
+  private String passwordHash;
 
-    @Column(name = "alamat", columnDefinition = "TEXT")
-    private String alamat;
+  @Column(name = "foto_profil", columnDefinition = "TEXT")
+  private String fotoProfil;
 
-    @Enumerated(EnumType.STRING)
-    @JdbcType(PostgreSQLEnumJdbcType.class)
-    @Column(name = "role", nullable = false, columnDefinition = "user_role")
-    private UserRole role;
+  @Column(name = "alamat", columnDefinition = "TEXT")
+  private String alamat;
 
-    @Enumerated(EnumType.STRING)
-    @JdbcType(PostgreSQLEnumJdbcType.class)
-    @Column(name = "status_akun", nullable = false, columnDefinition = "user_status")
-    @Builder.Default
-    private UserStatus statusAkun = UserStatus.ACTIVE;
+  @Enumerated(EnumType.STRING)
+  @JdbcType(PostgreSQLEnumJdbcType.class)
+  @Column(name = "role", nullable = false, columnDefinition = "user_role")
+  private UserRole role;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+  @Enumerated(EnumType.STRING)
+  @JdbcType(PostgreSQLEnumJdbcType.class)
+  @Column(name = "status_akun", nullable = false, columnDefinition = "user_status")
+  @Builder.Default
+  private UserStatus statusAkun = UserStatus.ACTIVE;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt;
-
-    @Column(name = "last_login")
-    private OffsetDateTime lastLogin;
-
-    @Column(name = "deleted_at")
-    private OffsetDateTime deletedAt;
+  @Column(name = "last_login")
+  private OffsetDateTime lastLogin;
 }

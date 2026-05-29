@@ -1,0 +1,50 @@
+rm -f ../teknisio_backend_clean_code_dump_*.txt
+
+OUT="../teknisio_backend_clean_code_dump_$(date +%Y%m%d_%H%M%S).txt"
+
+{
+  echo "============================================================"
+  echo "TEKNISIO BACKEND CLEAN CODE DUMP"
+  echo "Generated at: $(date)"
+  echo "Working dir : $(pwd)"
+  echo "============================================================"
+  echo
+
+  echo "============================================================"
+  echo "PROJECT STRUCTURE"
+  echo "============================================================"
+  find . \
+    \( -path "./build" -o -path "./.gradle" -o -path "./gradle" -o -path "./.git" \) -prune -o \
+    -type f -print \
+    | sort
+  echo
+
+  echo "============================================================"
+  echo "SOURCE FILE CONTENTS"
+  echo "============================================================"
+
+  find . \
+    \( -path "./build" -o -path "./.gradle" -o -path "./gradle" -o -path "./.git" \) -prune -o \
+    -type f \( \
+      -name "*.java" -o \
+      -name "*.sql" -o \
+      -name "*.yml" -o \
+      -name "*.yaml" -o \
+      -name "*.properties" -o \
+      -name "*.kts" -o \
+      -name "*.md" -o \
+      -name ".gitignore" \
+    \) -print \
+    | sort \
+    | while IFS= read -r file; do
+        echo
+        echo "============================================================"
+        echo "FILE: $file"
+        echo "============================================================"
+        sed -n '1,260p' "$file"
+      done
+} > "$OUT"
+
+echo "Dump created:"
+realpath "$OUT"
+ls -lh "$OUT"

@@ -1,8 +1,7 @@
 package com.teknisio.controllers;
 
 import com.teknisio.common.response.ApiResponse;
-import com.teknisio.dto.responses.TechnicianDetailResponse;
-import com.teknisio.dto.responses.TechnicianSummaryResponse;
+import com.teknisio.dto.responses.CustomerTechnicianResponse;
 import com.teknisio.services.CustomerTechnicianService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,38 +21,31 @@ public class CustomerTechnicianController {
   private final CustomerTechnicianService customerTechnicianService;
 
   @GetMapping
-  public ResponseEntity<ApiResponse<List<TechnicianSummaryResponse>>> getTechniciansByDeviceCategory(
-    @RequestParam UUID deviceCategoryId,
+  public ResponseEntity<ApiResponse<List<CustomerTechnicianResponse>>> searchTechnicians(
+    @RequestParam(required = false) String deviceCategoryId,
     @RequestParam(required = false) String availabilityStatus,
-    @RequestParam(required = false, defaultValue = "name") String sort
+    @RequestParam(required = false) String sort
   ) {
-    List<TechnicianSummaryResponse> technicians =
-      customerTechnicianService.getTechniciansByDeviceCategory(
-        deviceCategoryId,
-        availabilityStatus,
-        sort
-      );
+    List<CustomerTechnicianResponse> response = customerTechnicianService.searchTechnicians(
+      deviceCategoryId,
+      availabilityStatus,
+      sort
+    );
 
     return ResponseEntity.ok(
-      ApiResponse.success(
-        "Technicians retrieved successfully",
-        technicians
-      )
+      ApiResponse.success("Technicians retrieved successfully", response)
     );
   }
 
   @GetMapping("/{technicianProfileId}")
-  public ResponseEntity<ApiResponse<TechnicianDetailResponse>> getTechnicianDetail(
-    @PathVariable UUID technicianProfileId
+  public ResponseEntity<ApiResponse<CustomerTechnicianResponse>> getTechnicianDetail(
+    @PathVariable String technicianProfileId
   ) {
-    TechnicianDetailResponse technician =
+    CustomerTechnicianResponse response =
       customerTechnicianService.getTechnicianDetail(technicianProfileId);
 
     return ResponseEntity.ok(
-      ApiResponse.success(
-        "Technician retrieved successfully",
-        technician
-      )
+      ApiResponse.success("Technician retrieved successfully", response)
     );
   }
 }

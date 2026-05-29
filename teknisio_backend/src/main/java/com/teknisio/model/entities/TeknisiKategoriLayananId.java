@@ -18,6 +18,7 @@ import java.util.UUID;
 @EqualsAndHashCode
 @Embeddable
 public class TeknisiKategoriLayananId implements Serializable {
+
   @Column(name = "id_teknisi_profile")
   private UUID idTeknisiProfile;
 

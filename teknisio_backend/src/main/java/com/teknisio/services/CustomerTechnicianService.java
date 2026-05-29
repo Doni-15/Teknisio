@@ -2,13 +2,13 @@ package com.teknisio.services;
 
 import com.teknisio.common.exception.BadRequestException;
 import com.teknisio.common.exception.ResourceNotFoundException;
+import com.teknisio.common.util.EnumParser;
+import com.teknisio.common.util.TextUtil;
+import com.teknisio.dto.responses.CustomerTechnicianResponse;
 import com.teknisio.dto.responses.DeviceCategoryResponse;
-import com.teknisio.dto.responses.TechnicianDetailResponse;
-import com.teknisio.dto.responses.TechnicianSummaryResponse;
 import com.teknisio.model.entities.KategoriLayanan;
 import com.teknisio.model.entities.TeknisiKategoriLayanan;
 import com.teknisio.model.entities.TeknisiProfile;
-import com.teknisio.model.entities.User;
 import com.teknisio.model.enums.TeknisiStatus;
 import com.teknisio.model.enums.UserRole;
 import com.teknisio.model.enums.UserStatus;
@@ -22,187 +22,170 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class CustomerTechnicianService {
 
+  private static final String SORT_RATING = "rating";
+  private static final String SORT_TOTAL_JOBS = "totalJobs";
+  private static final String SORT_NAME = "name";
+
   private final KategoriLayananRepository kategoriLayananRepository;
   private final TeknisiKategoriLayananRepository teknisiKategoriLayananRepository;
   private final TeknisiProfileRepository teknisiProfileRepository;
 
   @Transactional(readOnly = true)
-  public List<TechnicianSummaryResponse> getTechniciansByDeviceCategory(
-    UUID deviceCategoryId,
+  public List<CustomerTechnicianResponse> searchTechnicians(
+    String deviceCategoryId,
     String availabilityStatus,
     String sort
   ) {
+    UUID categoryId = parseRequiredDeviceCategoryId(deviceCategoryId);
+
     kategoriLayananRepository
-      .findByIdKategoriAndAktifTrueAndDeletedAtIsNull(deviceCategoryId)
+      .findByIdKategoriAndAktifTrueAndDeletedAtIsNull(categoryId)
       .orElseThrow(() -> new ResourceNotFoundException("Device category not found"));
 
-    TeknisiStatus statusFilter = parseAvailabilityStatus(availabilityStatus);
-    Comparator<TeknisiProfile> comparator = getTechnicianComparator(sort);
+    TeknisiStatus parsedAvailabilityStatus = EnumParser.parseOptional(
+      TeknisiStatus.class,
+      availabilityStatus,
+      "availabilityStatus"
+    );
 
-    return teknisiKategoriLayananRepository
-      .findByKategori_IdKategoriAndAktifTrue(deviceCategoryId)
+    List<CustomerTechnicianResponse> technicians = teknisiKategoriLayananRepository
+      .findByKategori_IdKategoriAndAktifTrue(categoryId)
       .stream()
       .map(TeknisiKategoriLayanan::getTeknisiProfile)
-      .filter(this::isActiveTechnicianProfile)
-      .filter(technician -> matchesAvailabilityStatus(technician, statusFilter))
-      .distinct()
-      .sorted(comparator)
-      .map(this::toTechnicianSummaryResponse)
+      .filter(this::isActiveTechnician)
+      .filter(technician -> matchesAvailabilityStatus(technician, parsedAvailabilityStatus))
+      .map(this::toResponse)
+      .toList();
+
+    return technicians.stream()
+      .sorted(buildComparator(sort))
       .toList();
   }
 
   @Transactional(readOnly = true)
-  public TechnicianDetailResponse getTechnicianDetail(UUID technicianProfileId) {
-    TeknisiProfile technicianProfile = teknisiProfileRepository.findById(technicianProfileId)
-      .filter(this::isActiveTechnicianProfile)
+  public CustomerTechnicianResponse getTechnicianDetail(String technicianProfileId) {
+    UUID idTeknisiProfile = parseTechnicianProfileId(technicianProfileId);
+
+    TeknisiProfile technicianProfile = teknisiProfileRepository
+      .findById(idTeknisiProfile)
+      .filter(this::isActiveTechnician)
       .orElseThrow(() -> new ResourceNotFoundException("Technician not found"));
 
-    return toTechnicianDetailResponse(technicianProfile);
+    return toResponse(technicianProfile);
   }
 
-  private TeknisiStatus parseAvailabilityStatus(String availabilityStatus) {
-    if (availabilityStatus == null || availabilityStatus.isBlank()) {
-      return null;
+  private UUID parseRequiredDeviceCategoryId(String deviceCategoryId) {
+    if (TextUtil.isBlank(deviceCategoryId)) {
+      throw new BadRequestException("deviceCategoryId is required");
     }
 
     try {
-      return TeknisiStatus.valueOf(
-        availabilityStatus.trim().toUpperCase(Locale.ROOT)
-      );
+      return UUID.fromString(deviceCategoryId);
     } catch (IllegalArgumentException exception) {
-      throw new BadRequestException(
-        "Invalid availability status. Allowed values: ONLINE, OFFLINE, BUSY, ON_LEAVE"
-      );
+      throw new BadRequestException("Invalid device category id");
     }
+  }
+
+  private UUID parseTechnicianProfileId(String technicianProfileId) {
+    if (TextUtil.isBlank(technicianProfileId)) {
+      throw new BadRequestException("technicianProfileId is required");
+    }
+
+    try {
+      return UUID.fromString(technicianProfileId);
+    } catch (IllegalArgumentException exception) {
+      throw new BadRequestException("Invalid technician profile id");
+    }
+  }
+
+  private boolean isActiveTechnician(TeknisiProfile technicianProfile) {
+    return technicianProfile != null
+      && technicianProfile.getUser() != null
+      && technicianProfile.getUser().getDeletedAt() == null
+      && technicianProfile.getUser().getStatusAkun() == UserStatus.ACTIVE
+      && technicianProfile.getUser().getRole() == UserRole.TECHNICIAN;
   }
 
   private boolean matchesAvailabilityStatus(
     TeknisiProfile technicianProfile,
-    TeknisiStatus statusFilter
+    TeknisiStatus availabilityStatus
   ) {
-    return statusFilter == null
-      || technicianProfile.getStatusKetersediaan() == statusFilter;
+    return availabilityStatus == null
+      || technicianProfile.getStatusKetersediaan() == availabilityStatus;
   }
 
-  private Comparator<TeknisiProfile> getTechnicianComparator(String sort) {
-    String normalizedSort = sort == null || sort.isBlank()
-      ? "name"
-      : sort.trim().toLowerCase(Locale.ROOT);
-
-    Comparator<TeknisiProfile> byName = Comparator.comparing(
-      technician -> technician.getUser().getNama(),
-      String.CASE_INSENSITIVE_ORDER
-    );
-
-    return switch (normalizedSort) {
-      case "name" -> byName;
-
-      case "rating" -> Comparator
-        .comparing(
-          TeknisiProfile::getRatingAvg,
-          Comparator.nullsLast(BigDecimal::compareTo)
-        )
-        .reversed()
-        .thenComparing(
-          Comparator.comparing(
-            TeknisiProfile::getRatingCount,
-            Comparator.nullsLast(Integer::compareTo)
-          ).reversed()
-        )
-        .thenComparing(byName);
-
-      case "totaljobs" -> Comparator
-        .comparing(
-          TeknisiProfile::getTotalPekerjaan,
-          Comparator.nullsLast(Integer::compareTo)
-        )
-        .reversed()
-        .thenComparing(byName);
-
-      default -> throw new BadRequestException(
-        "Invalid sort option. Allowed values: name, rating, totalJobs"
-      );
-    };
-  }
-
-  private boolean isActiveTechnicianProfile(TeknisiProfile technicianProfile) {
-    User user = technicianProfile.getUser();
-
-    return user != null
-      && user.getRole() == UserRole.TECHNICIAN
-      && user.getStatusAkun() == UserStatus.ACTIVE
-      && user.getDeletedAt() == null;
-  }
-
-  private TechnicianSummaryResponse toTechnicianSummaryResponse(
-    TeknisiProfile technicianProfile
-  ) {
-    User user = technicianProfile.getUser();
-
-    return new TechnicianSummaryResponse(
+  private CustomerTechnicianResponse toResponse(TeknisiProfile technicianProfile) {
+    return new CustomerTechnicianResponse(
       technicianProfile.getIdTeknisiProfile(),
-      user.getNama(),
-      user.getFotoProfil(),
-      technicianProfile.getStatusKetersediaan().name(),
-      technicianProfile.getRatingAvg(),
-      technicianProfile.getRatingCount(),
-      technicianProfile.getTotalPekerjaan(),
-      getSupportedDeviceCategories(technicianProfile.getIdTeknisiProfile())
-    );
-  }
-
-  private TechnicianDetailResponse toTechnicianDetailResponse(
-    TeknisiProfile technicianProfile
-  ) {
-    User user = technicianProfile.getUser();
-
-    return new TechnicianDetailResponse(
-      technicianProfile.getIdTeknisiProfile(),
-      user.getNama(),
-      user.getFotoProfil(),
-      technicianProfile.getStatusKetersediaan().name(),
+      technicianProfile.getUser().getNama(),
+      technicianProfile.getUser().getFotoProfil(),
+      technicianProfile.getStatusKetersediaan(),
       technicianProfile.getRatingAvg(),
       technicianProfile.getRatingCount(),
       technicianProfile.getTotalPekerjaan(),
       technicianProfile.getDeskripsi(),
-      getSupportedDeviceCategories(technicianProfile.getIdTeknisiProfile())
+      getSupportedDeviceCategories(technicianProfile)
     );
   }
 
-  private List<DeviceCategoryResponse> getSupportedDeviceCategories(
-    UUID technicianProfileId
-  ) {
+  private List<DeviceCategoryResponse> getSupportedDeviceCategories(TeknisiProfile technicianProfile) {
     return teknisiKategoriLayananRepository
-      .findByTeknisiProfile_IdTeknisiProfileAndAktifTrue(technicianProfileId)
+      .findByTeknisiProfile_IdTeknisiProfileAndAktifTrue(technicianProfile.getIdTeknisiProfile())
       .stream()
       .map(TeknisiKategoriLayanan::getKategori)
-      .filter(this::isActiveDeviceCategory)
+      .filter(category -> Boolean.TRUE.equals(category.getAktif()))
+      .filter(category -> category.getDeletedAt() == null)
       .sorted(Comparator.comparing(
         KategoriLayanan::getNamaKategori,
         String.CASE_INSENSITIVE_ORDER
       ))
-      .map(this::toDeviceCategoryResponse)
+      .map(category -> new DeviceCategoryResponse(
+        category.getIdKategori(),
+        category.getNamaKategori(),
+        category.getIcon()
+      ))
       .toList();
   }
 
-  private boolean isActiveDeviceCategory(KategoriLayanan category) {
-    return category != null
-      && Boolean.TRUE.equals(category.getAktif())
-      && category.getDeletedAt() == null;
-  }
+  private Comparator<CustomerTechnicianResponse> buildComparator(String sort) {
+    if (TextUtil.isBlank(sort)) {
+      return Comparator
+        .comparing(
+          CustomerTechnicianResponse::averageRating,
+          Comparator.nullsLast(Comparator.reverseOrder())
+        )
+        .thenComparing(
+          CustomerTechnicianResponse::totalJobs,
+          Comparator.nullsLast(Comparator.reverseOrder())
+        )
+        .thenComparing(CustomerTechnicianResponse::name, String.CASE_INSENSITIVE_ORDER);
+    }
 
-  private DeviceCategoryResponse toDeviceCategoryResponse(KategoriLayanan category) {
-    return new DeviceCategoryResponse(
-      category.getIdKategori(),
-      category.getNamaKategori(),
-      category.getIcon()
-    );
+    return switch (sort.trim()) {
+      case SORT_RATING -> Comparator
+        .comparing(
+          CustomerTechnicianResponse::averageRating,
+          Comparator.nullsLast(Comparator.reverseOrder())
+        )
+        .thenComparing(CustomerTechnicianResponse::name, String.CASE_INSENSITIVE_ORDER);
+
+      case SORT_TOTAL_JOBS -> Comparator
+        .comparing(
+          CustomerTechnicianResponse::totalJobs,
+          Comparator.nullsLast(Comparator.reverseOrder())
+        )
+        .thenComparing(CustomerTechnicianResponse::name, String.CASE_INSENSITIVE_ORDER);
+
+      case SORT_NAME -> Comparator
+        .comparing(CustomerTechnicianResponse::name, String.CASE_INSENSITIVE_ORDER);
+
+      default -> throw new BadRequestException("Invalid sort. Allowed values: rating, totalJobs, name");
+    };
   }
 }

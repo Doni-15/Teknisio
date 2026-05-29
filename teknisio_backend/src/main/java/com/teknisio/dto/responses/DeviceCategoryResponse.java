@@ -6,4 +6,5 @@ public record DeviceCategoryResponse(
   UUID deviceCategoryId,
   String name,
   String icon
-) {}
+) {
+}

@@ -1,4 +1,0 @@
-CUSTOMER_TOKEN="paste_access_token_customer_di_sini"
-
-curl -X GET "http://localhost:8080/api/customers/technicians?deviceCategoryId=0ce231fb-57c0-42cd-80af-ee7c71aebe92" \
-  -H "Authorization: Bearer $CUSTOMER_TOKEN"

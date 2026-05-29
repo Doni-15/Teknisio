@@ -1,5 +1,6 @@
 package com.teknisio.model.entities;
 
+import com.teknisio.model.entities.base.BaseAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -13,10 +14,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.OffsetDateTime;
 
 @Getter
 @Setter
@@ -25,7 +22,8 @@ import java.time.OffsetDateTime;
 @Builder
 @Entity
 @Table(name = "teknisi_kategori_layanan")
-public class TeknisiKategoriLayanan {
+public class TeknisiKategoriLayanan extends BaseAuditableEntity {
+
   @EmbeddedId
   private TeknisiKategoriLayananId id;
 
@@ -42,12 +40,4 @@ public class TeknisiKategoriLayanan {
   @Column(name = "aktif", nullable = false)
   @Builder.Default
   private Boolean aktif = true;
-
-  @CreationTimestamp
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private OffsetDateTime createdAt;
-
-  @UpdateTimestamp
-  @Column(name = "updated_at", nullable = false)
-  private OffsetDateTime updatedAt;
 }

@@ -69,3 +69,15 @@ logs/
 
 # Local SQL
 *.session.sql
+
+# Build output
+build/
+target/
+out/
+.gradle/
+
+# Env
+.env
+*.env
+application-local.yml
+application-local.properties

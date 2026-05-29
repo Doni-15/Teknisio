@@ -1,39 +1,49 @@
 package com.teknisio.services;
 
+import com.teknisio.common.exception.BadRequestException;
 import com.teknisio.common.exception.ResourceNotFoundException;
 import com.teknisio.dto.responses.DeviceCategoryResponse;
 import com.teknisio.model.entities.KategoriLayanan;
 import com.teknisio.repositories.KategoriLayananRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class DeviceCategoryService {
+
   private final KategoriLayananRepository kategoriLayananRepository;
 
+  @Transactional(readOnly = true)
   public List<DeviceCategoryResponse> getActiveDeviceCategories() {
-    return kategoriLayananRepository.findByAktifTrueAndDeletedAtIsNull()
+    return kategoriLayananRepository
+      .findByAktifTrueAndDeletedAtIsNullOrderByNamaKategoriAsc()
       .stream()
-      .sorted(Comparator.comparing(
-        KategoriLayanan::getNamaKategori,
-        String.CASE_INSENSITIVE_ORDER
-      ))
       .map(this::toResponse)
       .toList();
   }
 
-  public DeviceCategoryResponse getDeviceCategoryById(UUID deviceCategoryId) {
+  @Transactional(readOnly = true)
+  public DeviceCategoryResponse getActiveDeviceCategoryById(String deviceCategoryId) {
+    UUID idKategori = parseDeviceCategoryId(deviceCategoryId);
+
     KategoriLayanan category = kategoriLayananRepository
-      .findByIdKategoriAndAktifTrueAndDeletedAtIsNull(deviceCategoryId)
-      .orElseThrow(() -> new ResourceNotFoundException("Device category not found"))
-    ;
+      .findByIdKategoriAndAktifTrueAndDeletedAtIsNull(idKategori)
+      .orElseThrow(() -> new ResourceNotFoundException("Device category not found"));
 
     return toResponse(category);
+  }
+
+  private UUID parseDeviceCategoryId(String deviceCategoryId) {
+    try {
+      return UUID.fromString(deviceCategoryId);
+    } catch (IllegalArgumentException exception) {
+      throw new BadRequestException("Invalid device category id");
+    }
   }
 
   private DeviceCategoryResponse toResponse(KategoriLayanan category) {

@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TeknisiKategoriLayananRepository extends JpaRepository<TeknisiKategoriLayanan, TeknisiKategoriLayananId> {
+
   List<TeknisiKategoriLayanan> findByKategori_IdKategoriAndAktifTrue(UUID idKategori);
+
   List<TeknisiKategoriLayanan> findByTeknisiProfile_IdTeknisiProfileAndAktifTrue(UUID idTeknisiProfile);
 
   boolean existsByTeknisiProfile_IdTeknisiProfileAndKategori_IdKategoriAndAktifTrue(

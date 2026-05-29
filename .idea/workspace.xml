@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="2c1b456e-4fa4-4395-8820-34ecf9c178cb" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/develop/fitur_24.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/develop/fitur_25.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/develop/fitur_26.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/develop/fitur_33.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/develop/layanan.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/develop/test-auth-api.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/common/exception/BadRequestException.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/common/exception/BadRequestException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/common/exception/ForbiddenException.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/common/exception/ForbiddenException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/common/exception/GlobalExceptionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/common/exception/GlobalExceptionHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/common/exception/ResourceNotFoundException.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/common/exception/ResourceNotFoundException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/common/exception/UnauthorizedException.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/common/exception/UnauthorizedException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/common/response/ApiResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/common/response/ApiResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/controllers/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/controllers/AuthController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/controllers/CustomerTechnicianController.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/controllers/CustomerTechnicianController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/controllers/DeviceCategoryController.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/controllers/DeviceCategoryController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/controllers/TechnicianMeController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/requests/CreatePermintaanLayananRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/requests/LoginRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/requests/LoginRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/requests/LogoutRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/requests/RefreshTokenRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/requests/RegisterCustomerRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/requests/RegisterCustomerRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/requests/RegisterTeknisiRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/requests/UpdateProfileRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/requests/UpdateTechnicianAvailabilityStatusRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/AuthProfileResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/CustomerAuthProfileResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/DeviceCategoryResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/DeviceCategoryResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/LoginResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/LogoutResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/RefreshTokenResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/RegisterCustomerResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/RegisterTeknisiResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/TechnicianAvailabilityStatusResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/TechnicianDetailResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/TechnicianSummaryResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/dto/responses/TeknisiAuthProfileResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/JadwalTeknisi.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/JenisLayanan.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/KategoriLayanan.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/KategoriLayanan.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/LogAktivitas.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/MediaPermintaan.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/Notifikasi.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/PermintaanLayanan.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/PermintaanLayanan.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/Pesan.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/Review.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/RiwayatStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/RiwayatStatus.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/TeknisiKategoriLayanan.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/TeknisiKategoriLayanan.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/TeknisiKategoriLayananId.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/TeknisiKategoriLayananId.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/TeknisiLayanan.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/TeknisiLayananId.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/TeknisiProfile.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/TeknisiProfile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/User.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/UserSession.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/entities/UserSession.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/enums/HariEnum.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/enums/NotificationReferenceType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/model/enums/PesanType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/JadwalTeknisiRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/JenisLayananRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/KategoriLayananRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/KategoriLayananRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/LogAktivitasRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/MediaPermintaanRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/NotifikasiRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/PermintaanLayananRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/PermintaanLayananRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/PesanRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/ReviewRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/RiwayatStatusRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/RiwayatStatusRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/TeknisiKategoriLayananRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/TeknisiKategoriLayananRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/TeknisiLayananRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/TeknisiProfileRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/TeknisiProfileRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/UserRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/UserRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/UserSessionRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/repositories/UserSessionRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/security/JwtAuthenticationFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/security/JwtAuthenticationFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/security/JwtService.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/security/JwtService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/services/AuthProfileService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/services/AuthRegistrationService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/services/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/services/AuthService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/services/AuthSessionService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/services/CustomerTechnicianService.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/services/CustomerTechnicianService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/services/DeviceCategoryService.java" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/services/DeviceCategoryService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/java/com/teknisio/services/TechnicianMeService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/resources/db/migration/V1__create_enums.sql" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/resources/db/migration/V1__create_enums.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/resources/db/migration/V2__create_tables.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/resources/db/migration/V3__create_indexes.sql" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/resources/db/migration/V3__create_indexes.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/resources/db/migration/V4__create_triggers.sql" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/resources/db/migration/V4__create_triggers.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/resources/db/migration/V5__seed_device_categories.sql" beforeDir="false" afterPath="$PROJECT_DIR$/teknisio_backend/src/main/resources/db/migration/V5__seed_device_categories.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/teknisio_backend/src/main/resources/db/migration/V6__create_teknisi_kategori_layanan.sql" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 1,
+  "fromUser": false
+}]]></component>
+  <component name="ProjectId" id="3EPcL96oIwqAQ6ooA4CIYchDUWf" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "doni-be-33",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/D/KULIAH/SEMESTER 4/REGULER/Pemrograman Berbasis Object/Proyek Akhir/teknisio_backend"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2c1b456e-4fa4-4395-8820-34ecf9c178cb" name="Changes" comment="" />
+      <created>1780083587067</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1780083587067</updated>
+    </task>
+    <servers />
+  </component>
+</project>

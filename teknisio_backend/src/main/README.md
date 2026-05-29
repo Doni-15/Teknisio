@@ -92,11 +92,11 @@ Target: backend punya struktur rapi, response seragam, error handling, repositor
   - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `services`
   - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `controllers`
   - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `security`
-  - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `websocket`
   - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `common`
     - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `response`
     - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `exception`
-    - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat package `util`
+  - ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Package `websocket` ditunda sampai fitur realtime/chat/notifikasi
+  - ![deferred](https://img.shields.io/badge/%5Bdeferred%5D-lightgrey?style=flat-square) Package `common.util` ditunda sampai ada utility yang benar-benar dipakai
 
 - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) **BE-01 [MVP] Buat global response format**
   - ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat `ApiResponse<T>`

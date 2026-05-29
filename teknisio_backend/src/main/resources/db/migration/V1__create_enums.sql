@@ -1,15 +1,8 @@
 -- ============================================================
--- Teknisio Migration V1: Extension dan ENUM
+-- Teknisio Migration V1: Extensions and ENUM types
 -- ============================================================
 
--- ============================================================
--- EXTENSION
--- ============================================================
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- ============================================================
--- ENUMS
--- ============================================================
 
 CREATE TYPE user_role AS ENUM (
   'CUSTOMER',
@@ -38,26 +31,4 @@ CREATE TYPE request_status AS ENUM (
   'COMPLETED',
   'CANCELLED',
   'REJECTED'
-);
-
-CREATE TYPE pesan_type AS ENUM (
-  'TEXT',
-  'IMAGE',
-  'SYSTEM'
-);
-
-CREATE TYPE notification_reference_type AS ENUM (
-  'SERVICE_REQUEST',
-  'CHAT',
-  'REVIEW'
-);
-
-CREATE TYPE hari_enum AS ENUM (
-  'MONDAY',
-  'TUESDAY',
-  'WEDNESDAY',
-  'THURSDAY',
-  'FRIDAY',
-  'SATURDAY',
-  'SUNDAY'
 );

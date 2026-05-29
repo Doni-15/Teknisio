@@ -1,8 +1,10 @@
 package com.teknisio.common.exception;
 
-public class BadRequestException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class BadRequestException extends ApiException {
 
   public BadRequestException(String message) {
-    super(message);
+    super(HttpStatus.BAD_REQUEST, message);
   }
 }

@@ -1,10 +1,10 @@
 -- ============================================================
--- Teknisio Migration V4: Functions dan Triggers Minimal untuk Development
--- Jalankan setelah V3__create_indexes.sql
+-- Teknisio Migration V4: Functions and triggers
+-- Clean MVP schema
 -- ============================================================
 
 -- ============================================================
--- FUNCTION: auto update updated_at
+-- FUNCTION: update updated_at automatically
 -- ============================================================
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
@@ -15,38 +15,48 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================================
--- FUNCTION: validasi alur status permintaan layanan
--- Alur valid:
--- WAITING -> ACCEPTED / REJECTED / CANCELLED
--- ACCEPTED -> ON_PROGRESS / CANCELLED
+-- FUNCTION: validate service request status flow
+--
+-- Valid flow:
+-- WAITING     -> ACCEPTED / REJECTED / CANCELLED
+-- ACCEPTED   -> ON_PROGRESS / CANCELLED
 -- ON_PROGRESS -> COMPLETED / CANCELLED
--- COMPLETED, CANCELLED, REJECTED = final
+--
+-- Final statuses:
+-- COMPLETED, CANCELLED, REJECTED
 -- ============================================================
 CREATE OR REPLACE FUNCTION validate_request_status_flow()
 RETURNS TRIGGER AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
+    NEW.status := COALESCE(NEW.status, 'WAITING');
+    NEW.waktu_permintaan := COALESCE(NEW.waktu_permintaan, CURRENT_TIMESTAMP);
+
     IF NEW.status <> 'WAITING' THEN
       RAISE EXCEPTION 'Initial service request status must be WAITING';
     END IF;
 
-    NEW.waktu_permintaan := COALESCE(NEW.waktu_permintaan, CURRENT_TIMESTAMP);
     RETURN NEW;
   END IF;
 
   IF NEW.status IS DISTINCT FROM OLD.status THEN
-    IF OLD.status = 'WAITING' AND NEW.status NOT IN ('ACCEPTED', 'REJECTED', 'CANCELLED') THEN
-      RAISE EXCEPTION 'Invalid status transition: WAITING can only change to ACCEPTED, REJECTED, or CANCELLED';
-    ELSIF OLD.status = 'ACCEPTED' AND NEW.status NOT IN ('ON_PROGRESS', 'CANCELLED') THEN
-      RAISE EXCEPTION 'Invalid status transition: ACCEPTED can only change to ON_PROGRESS or CANCELLED';
-    ELSIF OLD.status = 'ON_PROGRESS' AND NEW.status NOT IN ('COMPLETED', 'CANCELLED') THEN
-      RAISE EXCEPTION 'Invalid status transition: ON_PROGRESS can only change to COMPLETED or CANCELLED';
-    ELSIF OLD.status IN ('COMPLETED', 'CANCELLED', 'REJECTED') THEN
-      RAISE EXCEPTION 'Status % is final and cannot be changed', OLD.status;
+    IF OLD.status = 'WAITING'
+      AND NEW.status NOT IN ('ACCEPTED', 'REJECTED', 'CANCELLED') THEN
+      RAISE EXCEPTION 'Invalid status transition from WAITING to %', NEW.status;
     END IF;
 
-    IF NEW.status IN ('ACCEPTED', 'ON_PROGRESS', 'COMPLETED') AND NEW.id_teknisi_profile IS NULL THEN
-      RAISE EXCEPTION 'Status ACCEPTED, ON_PROGRESS, or COMPLETED requires a technician profile';
+    IF OLD.status = 'ACCEPTED'
+      AND NEW.status NOT IN ('ON_PROGRESS', 'CANCELLED') THEN
+      RAISE EXCEPTION 'Invalid status transition from ACCEPTED to %', NEW.status;
+    END IF;
+
+    IF OLD.status = 'ON_PROGRESS'
+      AND NEW.status NOT IN ('COMPLETED', 'CANCELLED') THEN
+      RAISE EXCEPTION 'Invalid status transition from ON_PROGRESS to %', NEW.status;
+    END IF;
+
+    IF OLD.status IN ('COMPLETED', 'CANCELLED', 'REJECTED') THEN
+      RAISE EXCEPTION 'Status % is final and cannot be changed', OLD.status;
     END IF;
 
     IF NEW.status = 'ACCEPTED' THEN
@@ -55,8 +65,10 @@ BEGIN
       NEW.waktu_diproses := COALESCE(NEW.waktu_diproses, CURRENT_TIMESTAMP);
     ELSIF NEW.status = 'COMPLETED' THEN
       NEW.waktu_selesai := COALESCE(NEW.waktu_selesai, CURRENT_TIMESTAMP);
-    ELSIF NEW.status IN ('CANCELLED', 'REJECTED') THEN
+    ELSIF NEW.status = 'CANCELLED' THEN
       NEW.waktu_dibatalkan := COALESCE(NEW.waktu_dibatalkan, CURRENT_TIMESTAMP);
+    ELSIF NEW.status = 'REJECTED' THEN
+      NEW.waktu_ditolak := COALESCE(NEW.waktu_ditolak, CURRENT_TIMESTAMP);
     END IF;
   END IF;
 
@@ -65,7 +77,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================================
--- FUNCTION: simpan riwayat status otomatis
+-- FUNCTION: create status history automatically
 -- ============================================================
 CREATE OR REPLACE FUNCTION create_status_history()
 RETURNS TRIGGER AS $$
@@ -84,7 +96,11 @@ BEGIN
       NEW.status,
       'Service request created'
     );
-  ELSIF NEW.status IS DISTINCT FROM OLD.status THEN
+
+    RETURN NEW;
+  END IF;
+
+  IF NEW.status IS DISTINCT FROM OLD.status THEN
     INSERT INTO riwayat_status (
       id_permintaan,
       diubah_oleh,
@@ -107,6 +123,7 @@ $$ LANGUAGE plpgsql;
 -- ============================================================
 -- TRIGGERS: updated_at
 -- ============================================================
+
 CREATE TRIGGER trg_users_updated_at
 BEFORE UPDATE ON users
 FOR EACH ROW
@@ -122,13 +139,8 @@ BEFORE UPDATE ON kategori_layanan
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
-CREATE TRIGGER trg_jenis_layanan_updated_at
-BEFORE UPDATE ON jenis_layanan
-FOR EACH ROW
-EXECUTE FUNCTION set_updated_at();
-
-CREATE TRIGGER trg_teknisi_layanan_updated_at
-BEFORE UPDATE ON teknisi_layanan
+CREATE TRIGGER trg_teknisi_kategori_layanan_updated_at
+BEFORE UPDATE ON teknisi_kategori_layanan
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
@@ -137,30 +149,21 @@ BEFORE UPDATE ON permintaan_layanan
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
-CREATE TRIGGER trg_jadwal_teknisi_updated_at
-BEFORE UPDATE ON jadwal_teknisi
-FOR EACH ROW
-EXECUTE FUNCTION set_updated_at();
-
 CREATE TRIGGER trg_user_session_updated_at
 BEFORE UPDATE ON user_session
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
-CREATE TRIGGER trg_review_updated_at
-BEFORE UPDATE ON review
-FOR EACH ROW
-EXECUTE FUNCTION set_updated_at();
+-- ============================================================
+-- TRIGGERS: service request status rules
+-- ============================================================
 
--- ============================================================
--- TRIGGERS: business rule status layanan
--- ============================================================
 CREATE TRIGGER trg_permintaan_status_flow
-BEFORE INSERT OR UPDATE OF status, id_teknisi_profile ON permintaan_layanan
+BEFORE INSERT OR UPDATE OF status ON permintaan_layanan
 FOR EACH ROW
 EXECUTE FUNCTION validate_request_status_flow();
 
-CREATE TRIGGER trg_status_history
+CREATE TRIGGER trg_permintaan_status_history
 AFTER INSERT OR UPDATE OF status ON permintaan_layanan
 FOR EACH ROW
 EXECUTE FUNCTION create_status_history();

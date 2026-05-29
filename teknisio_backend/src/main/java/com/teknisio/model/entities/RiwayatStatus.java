@@ -1,14 +1,26 @@
 package com.teknisio.model.entities;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+import com.teknisio.model.entities.base.BaseCreatedAtEntity;
+import com.teknisio.model.enums.RequestStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
-import com.teknisio.model.enums.RequestStatus;
-
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
@@ -18,35 +30,31 @@ import java.util.UUID;
 @Builder
 @Entity
 @Table(name = "riwayat_status")
-public class RiwayatStatus {
+public class RiwayatStatus extends BaseCreatedAtEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id_riwayat", nullable = false, updatable = false)
-    private UUID idRiwayat;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(name = "id_riwayat", nullable = false, updatable = false)
+  private UUID idRiwayat;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_permintaan", nullable = false)
-    private PermintaanLayanan permintaan;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "id_permintaan", nullable = false)
+  private PermintaanLayanan permintaan;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "diubah_oleh")
-    private User diubahOleh;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "diubah_oleh")
+  private User diubahOleh;
 
-    @Enumerated(EnumType.STRING)
-    @JdbcType(PostgreSQLEnumJdbcType.class)
-    @Column(name = "status_sebelum", columnDefinition = "request_status")
-    private RequestStatus statusSebelum;
+  @Enumerated(EnumType.STRING)
+  @JdbcType(PostgreSQLEnumJdbcType.class)
+  @Column(name = "status_sebelum", columnDefinition = "request_status")
+  private RequestStatus statusSebelum;
 
-    @Enumerated(EnumType.STRING)
-    @JdbcType(PostgreSQLEnumJdbcType.class)
-    @Column(name = "status_sesudah", nullable = false, columnDefinition = "request_status")
-    private RequestStatus statusSesudah;
+  @Enumerated(EnumType.STRING)
+  @JdbcType(PostgreSQLEnumJdbcType.class)
+  @Column(name = "status_sesudah", nullable = false, columnDefinition = "request_status")
+  private RequestStatus statusSesudah;
 
-    @Column(name = "catatan", columnDefinition = "TEXT")
-    private String catatan;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+  @Column(name = "catatan", columnDefinition = "TEXT")
+  private String catatan;
 }
