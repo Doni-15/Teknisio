@@ -1749,13 +1749,13 @@ Target: customer dan technician bisa melihat serta mengubah profil dasar. Techni
 
 ## BE-70 [MVP] Update profil sendiri
 
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint: `PUT /api/users/me`
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Bisa update `name`
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Bisa update `phoneNumber`
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Bisa update `profilePhoto`
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Bisa update `address`
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Validasi phone number jika berubah
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Response menggunakan field English
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint: `PUT /api/users/me`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Bisa update `name`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Bisa update `phoneNumber`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Bisa update `profilePhoto`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Bisa update `address`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Validasi phone number jika berubah
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response menggunakan field English
 
 Planned contract:
 
