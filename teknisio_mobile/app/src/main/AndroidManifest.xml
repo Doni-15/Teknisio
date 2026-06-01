@@ -53,6 +53,40 @@
             android:name=".view.customer.OrderTechnicianActivity"
             android:exported="false" />
 
-</application>
+        <activity
+            android:name=".view.customer.NotificationActivity"
+            android:exported="false" />
+
+            <activity
+            android:name=".view.customer.TechnicianDetailActivity"
+            android:exported="false" />
+
+    
+        <activity
+            android:name=".view.customer.OrderHistoryActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".view.customer.ServiceRequestDetailActivity"
+            android:exported="false" />
+
+    
+        <activity
+            android:name=".view.technician.TechnicianHomeActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".view.technician.TechnicianRequestDetailActivity"
+            android:exported="false" />
+
+            <activity
+            android:name=".view.technician.TechnicianSkillActivity"
+            android:exported="false" />
+
+            <activity
+            android:name=".view.technician.TechnicianHistoryActivity"
+            android:exported="false" />
+
+    </application>
 
 </manifest>

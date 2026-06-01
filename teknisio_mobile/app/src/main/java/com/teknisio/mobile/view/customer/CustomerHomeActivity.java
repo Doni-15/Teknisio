@@ -1,5 +1,6 @@
 package com.teknisio.mobile.view.customer;
 
+import com.teknisio.mobile.base.BaseActivity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -19,7 +20,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.teknisio.mobile.R;
 import com.teknisio.mobile.local.TokenManager;
@@ -37,7 +37,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class CustomerHomeActivity extends AppCompatActivity {
+public class CustomerHomeActivity extends BaseActivity {
 
     private TextView txtAvatarInitial;
     private TextView txtHomeName;
@@ -47,6 +47,7 @@ public class CustomerHomeActivity extends AppCompatActivity {
     private LinearLayout layoutTechnicians;
     private TextView txtTechnicianEmpty;
     private HorizontalScrollView scrollTechnicians;
+    private FrameLayout btnNotification;
 
     private LinearLayout navChat;
     private LinearLayout navHistory;
@@ -90,6 +91,7 @@ public class CustomerHomeActivity extends AppCompatActivity {
         layoutTechnicians = findViewById(R.id.layoutTechnicians);
         txtTechnicianEmpty = findViewById(R.id.txtTechnicianEmpty);
         scrollTechnicians = findViewById(R.id.scrollTechnicians);
+        btnNotification = findViewById(R.id.btnNotification);
 
         navChat = findViewById(R.id.navChat);
         navHistory = findViewById(R.id.navHistory);
@@ -111,13 +113,21 @@ public class CustomerHomeActivity extends AppCompatActivity {
     }
 
     private void setupNavigation() {
+        if (btnNotification != null) {
+            btnNotification.setOnClickListener(v -> {
+                Intent intent = new Intent(CustomerHomeActivity.this, NotificationActivity.class);
+                startActivity(intent);
+            });
+        }
+
         navChat.setOnClickListener(v ->
                 Toast.makeText(this, "Chat belum tersedia.", Toast.LENGTH_SHORT).show()
         );
 
-        navHistory.setOnClickListener(v ->
-                Toast.makeText(this, "History belum tersedia.", Toast.LENGTH_SHORT).show()
-        );
+        navHistory.setOnClickListener(v -> {
+            Intent intent = new Intent(CustomerHomeActivity.this, OrderHistoryActivity.class);
+            startActivity(intent);
+        });
 
         navAccount.setOnClickListener(v -> {
             Intent intent = new Intent(CustomerHomeActivity.this, AccountActivity.class);
@@ -272,44 +282,6 @@ public class CustomerHomeActivity extends AppCompatActivity {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
-    }
-
-    private void loadTechnicians(String deviceCategoryId) {
-        if (deviceCategoryId == null || deviceCategoryId.trim().isEmpty()) {
-            showTechnicianMessage("Pilih kategori untuk melihat teknisi.");
-            return;
-        }
-
-        showTechnicianMessage("Memuat teknisi...");
-
-        ApiClient.getApiService(this)
-                .searchTechnicians(deviceCategoryId, null, "rating")
-                .enqueue(new Callback<ApiResponse<List<CustomerTechnicianResponse>>>() {
-                    @Override
-                    public void onResponse(
-                            Call<ApiResponse<List<CustomerTechnicianResponse>>> call,
-                            Response<ApiResponse<List<CustomerTechnicianResponse>>> response
-                    ) {
-                        if (!response.isSuccessful() || response.body() == null || !response.body().success) {
-                            showTechnicianMessage("Teknisi gagal dimuat.");
-                            return;
-                        }
-
-                        List<CustomerTechnicianResponse> technicians = response.body().data;
-
-                        if (technicians == null || technicians.isEmpty()) {
-                            showTechnicianMessage("Belum ada teknisi untuk kategori ini.");
-                            return;
-                        }
-
-                        renderTechnicians(technicians);
-                    }
-
-                    @Override
-                    public void onFailure(Call<ApiResponse<List<CustomerTechnicianResponse>>> call, Throwable t) {
-                        showTechnicianMessage("Tidak bisa memuat teknisi.");
-                    }
-                });
     }
 
     private void renderCategories() {
@@ -737,7 +709,7 @@ public class CustomerHomeActivity extends AppCompatActivity {
         statusChip.setLayoutParams(statusParams);
         statusChip.setPadding(dp(10), dp(5), dp(10), dp(5));
         statusChip.setBackground(makeStrokeRounded("#EDF9F0", "#CFE9D6", 12, 1));
-        statusChip.setText("Available");
+        statusChip.setText("Tersedia");
         statusChip.setTextColor(Color.parseColor("#2E7D32"));
         statusChip.setTextSize(12);
 
@@ -764,13 +736,9 @@ public class CustomerHomeActivity extends AppCompatActivity {
         card.addView(statsRow);
         card.addView(button);
 
-        card.setOnClickListener(v ->
-                Toast.makeText(this, "Detail teknisi belum dibuat.", Toast.LENGTH_SHORT).show()
-        );
+button.setOnClickListener(v -> openTechnicianInfo(technician));
 
-        button.setOnClickListener(v ->
-                Toast.makeText(this, "Detail teknisi belum dibuat.", Toast.LENGTH_SHORT).show()
-        );
+        card.setOnClickListener(v -> openTechnicianInfo(technician));
 
         return card;
     }
@@ -858,12 +826,25 @@ public class CustomerHomeActivity extends AppCompatActivity {
 
     private String formatJobs(Integer totalJobs) {
         int jobs = totalJobs == null ? 0 : totalJobs;
-        return jobs + " jobs";
+        return jobs + " pekerjaan";
+    }
+
+    private void openTechnicianInfo(CustomerTechnicianResponse technician) {
+        if (technician == null || isBlank(technician.technicianProfileId)) {
+            Toast.makeText(this, "Data teknisi tidak valid.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(CustomerHomeActivity.this, TechnicianDetailActivity.class);
+        intent.putExtra(TechnicianDetailActivity.EXTRA_TECHNICIAN_ID, technician.technicianProfileId);
+        intent.putExtra(TechnicianDetailActivity.EXTRA_TECHNICIAN_NAME, technician.name);
+
+        startActivity(intent);
     }
 
     private String getDisplayName(String name) {
         if (name == null || name.trim().isEmpty()) {
-            return "Customer";
+            return "Pelanggan";
         }
 
         return name.trim();

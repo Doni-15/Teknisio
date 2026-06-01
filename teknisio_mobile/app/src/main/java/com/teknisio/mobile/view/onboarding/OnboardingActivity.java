@@ -1,5 +1,6 @@
 package com.teknisio.mobile.view.onboarding;
 
+import com.teknisio.mobile.base.BaseActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -9,13 +10,12 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
 import com.teknisio.mobile.MainActivity;
 import com.teknisio.mobile.R;
 
-public class OnboardingActivity extends AppCompatActivity {
+public class OnboardingActivity extends BaseActivity {
 
     private ImageView imgOnboarding;
     private View dot1;

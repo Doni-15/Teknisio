@@ -4,6 +4,10 @@ import com.teknisio.mobile.model.request.LoginRequest;
 import com.teknisio.mobile.model.request.RegisterCustomerRequest;
 import com.teknisio.mobile.model.request.RegisterTechnicianRequest;
 import com.teknisio.mobile.model.request.CreateServiceRequestRequest;
+import com.teknisio.mobile.model.request.CancelServiceRequestRequest;
+import com.teknisio.mobile.model.request.CompleteServiceRequestRequest;
+import com.teknisio.mobile.model.request.RejectServiceRequestRequest;
+import com.teknisio.mobile.model.request.AddTechnicianDeviceCategoryRequest;
 import com.teknisio.mobile.model.response.ApiResponse;
 import com.teknisio.mobile.model.response.AuthResponse;
 import com.teknisio.mobile.model.response.AuthUserResponse;
@@ -13,10 +17,15 @@ import com.teknisio.mobile.model.response.ServiceRequestResponse;
 
 import java.util.List;
 
+import okhttp3.ResponseBody;
+
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
+import retrofit2.http.PATCH;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface ApiService {
@@ -29,6 +38,11 @@ public interface ApiService {
             @Query("deviceCategoryId") String deviceCategoryId,
             @Query("availabilityStatus") String availabilityStatus,
             @Query("sort") String sort
+    );
+
+    @GET("api/customers/technicians/{technicianProfileId}")
+    Call<ApiResponse<CustomerTechnicianResponse>> getTechnicianDetail(
+            @Path("technicianProfileId") String technicianProfileId
     );
 
     @POST("api/auth/login")
@@ -47,4 +61,75 @@ public interface ApiService {
     Call<ApiResponse<ServiceRequestResponse>> createServiceRequest(
             @Body CreateServiceRequestRequest request
     );
+    @GET("api/customers/service-requests")
+    Call<ApiResponse<List<ServiceRequestResponse>>> getMyServiceRequests(
+            @Query("status") String status
+    );
+
+    @GET("api/customers/service-requests/{serviceRequestId}")
+    Call<ApiResponse<ServiceRequestResponse>> getMyServiceRequestDetail(
+            @Path("serviceRequestId") String serviceRequestId
+    );
+
+    @PATCH("api/customers/service-requests/{serviceRequestId}/cancel")
+    Call<ApiResponse<ServiceRequestResponse>> cancelMyServiceRequest(
+            @Path("serviceRequestId") String serviceRequestId,
+            @Body CancelServiceRequestRequest request
+    );
+
+
+    @GET("api/technicians/service-requests")
+    Call<ApiResponse<List<ServiceRequestResponse>>> getTechnicianServiceRequests(
+            @Query("status") String status,
+            @Query("sort") String sort
+    );
+
+    @GET("api/technicians/service-requests/{serviceRequestId}")
+    Call<ApiResponse<ServiceRequestResponse>> getTechnicianServiceRequestDetail(
+            @Path("serviceRequestId") String serviceRequestId
+    );
+
+
+    @GET("api/technicians/device-categories")
+    Call<ApiResponse<List<DeviceCategoryResponse>>> getTechnicianDeviceCategories();
+
+    @POST("api/technicians/device-categories")
+    Call<ApiResponse<DeviceCategoryResponse>> addTechnicianDeviceCategory(
+            @Body AddTechnicianDeviceCategoryRequest request
+    );
+
+    @DELETE("api/technicians/device-categories/{deviceCategoryId}")
+    Call<ApiResponse<Object>> deleteTechnicianDeviceCategory(
+            @Path("deviceCategoryId") String deviceCategoryId
+    );
+
+
+    @PATCH("api/technicians/service-requests/{serviceRequestId}/accept")
+    Call<ApiResponse<ServiceRequestResponse>> acceptTechnicianServiceRequest(
+            @Path("serviceRequestId") String serviceRequestId
+    );
+
+    @PATCH("api/technicians/service-requests/{serviceRequestId}/reject")
+    Call<ApiResponse<ServiceRequestResponse>> rejectTechnicianServiceRequest(
+            @Path("serviceRequestId") String serviceRequestId,
+            @Body RejectServiceRequestRequest request
+    );
+
+    @PATCH("api/technicians/service-requests/{serviceRequestId}/start")
+    Call<ApiResponse<ServiceRequestResponse>> startTechnicianServiceRequest(
+            @Path("serviceRequestId") String serviceRequestId
+    );
+
+    @PATCH("api/technicians/service-requests/{serviceRequestId}/complete")
+    Call<ApiResponse<ServiceRequestResponse>> completeTechnicianServiceRequest(
+            @Path("serviceRequestId") String serviceRequestId,
+            @Body CompleteServiceRequestRequest request
+    );
+
+    @GET("api/notifications")
+    Call<ResponseBody> getNotifications();
+
+    @PATCH("api/notifications/{notificationId}/read")
+    Call<ResponseBody> markNotificationRead(@Path("notificationId") String notificationId);
 }
+

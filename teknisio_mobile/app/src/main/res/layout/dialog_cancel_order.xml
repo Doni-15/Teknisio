@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layoutCancelDialog"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialog_card"
+    android:orientation="vertical"
+    android:padding="22dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cancel Order"
+        android:textColor="#1F2329"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:lineSpacingExtra="3dp"
+        android:text="Masukkan alasan pembatalan agar teknisi dan sistem dapat memproses order dengan jelas."
+        android:textColor="#6B7680"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/edtCancelReason"
+        android:layout_width="match_parent"
+        android:layout_height="116dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/bg_dialog_input"
+        android:gravity="top|start"
+        android:hint="Contoh: Jadwal berubah atau salah memilih teknisi"
+        android:inputType="textMultiLine|textCapSentences"
+        android:maxLength="1000"
+        android:padding="14dp"
+        android:textColor="#1F2329"
+        android:textColorHint="#8A949B"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/txtCancelReasonError"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:text="Alasan pembatalan wajib diisi."
+        android:textColor="#C62828"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="22dp"
+        android:orientation="horizontal">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnKeepOrder"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_dialog_secondary_button"
+            android:backgroundTint="@null"
+            android:text="Keep Order"
+            android:textAllCaps="false"
+            android:textColor="#2F4A8A"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnSubmitCancel"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_dialog_danger_button"
+            android:backgroundTint="@null"
+            android:text="Cancel"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</LinearLayout>

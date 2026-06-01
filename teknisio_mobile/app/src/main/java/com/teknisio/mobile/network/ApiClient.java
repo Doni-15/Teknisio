@@ -1,6 +1,7 @@
 package com.teknisio.mobile.network;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -21,7 +22,9 @@ public final class ApiClient {
     public static ApiService getApiService(Context context) {
         if (apiService == null) {
             HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-            loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+            loggingInterceptor.setLevel(isDebugBuild(context)
+                    ? HttpLoggingInterceptor.Level.BODY
+                    : HttpLoggingInterceptor.Level.NONE);
 
             OkHttpClient client = new OkHttpClient.Builder()
                     .addInterceptor(new AuthInterceptor(context))
@@ -47,4 +50,10 @@ public final class ApiClient {
     public static void reset() {
         apiService = null;
     }
+
+    private static boolean isDebugBuild(Context context) {
+        return context != null
+                && (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+    }
+
 }

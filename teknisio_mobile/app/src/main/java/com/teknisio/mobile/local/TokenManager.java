@@ -84,6 +84,11 @@ public class TokenManager {
       return prefs.getString(KEY_PROFILE_PHOTO, null);
     }
 
+
+    public String getTechnicianProfileId() {
+      return prefs.getString(KEY_TECHNICIAN_PROFILE_ID, null);
+    }
+
     public String getAccountStatus() {
       return prefs.getString(KEY_ACCOUNT_STATUS, null);
     }

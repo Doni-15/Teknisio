@@ -117,7 +117,7 @@
             android:background="@drawable/bg_start_button"
             android:fontFamily="sans-serif-medium"
             android:stateListAnimator="@null"
-            android:text="Confirm"
+            android:text="Masuk"
             android:textAllCaps="false"
             android:textColor="#E5FFFF"
             android:textSize="17sp"

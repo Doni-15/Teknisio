@@ -1,5 +1,6 @@
 package com.teknisio.mobile.view.customer;
 
+import com.teknisio.mobile.base.BaseActivity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -15,7 +16,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.teknisio.mobile.R;
 import com.teknisio.mobile.model.response.ApiResponse;
@@ -33,7 +33,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class TechnicianListActivity extends AppCompatActivity {
+public class TechnicianListActivity extends BaseActivity {
 
     public static final String EXTRA_CATEGORY_ID = "extra_category_id";
     public static final String EXTRA_CATEGORY_NAME = "extra_category_name";
@@ -61,7 +61,11 @@ public class TechnicianListActivity extends AppCompatActivity {
         categoryName = getIntent().getStringExtra(EXTRA_CATEGORY_NAME);
 
         bindViews();
-        setupInitialData();
+
+        if (!setupInitialData()) {
+            return;
+        }
+
         setupActions();
         loadTechnicians();
     }
@@ -76,16 +80,17 @@ public class TechnicianListActivity extends AppCompatActivity {
         btnMeetTechnician = findViewById(R.id.btnMeetTechnician);
     }
 
-    private void setupInitialData() {
+    private boolean setupInitialData() {
         if (isBlank(categoryId)) {
             Toast.makeText(this, "Kategori tidak valid.", Toast.LENGTH_SHORT).show();
             finish();
-            return;
+            return false;
         }
 
         txtCategoryName.setText(getCleanCategoryName(categoryName));
         imgCategoryIcon.setImageResource(getCategoryIconResId(categoryName));
         setLoading(false);
+        return true;
     }
 
     private void setupActions() {
@@ -294,7 +299,7 @@ public class TechnicianListActivity extends AppCompatActivity {
     private void setLoading(boolean loading) {
         btnMeetTechnician.setEnabled(!loading && selectedTechnician != null);
         btnMeetTechnician.setAlpha((!loading && selectedTechnician != null) ? 1f : 0.55f);
-        btnMeetTechnician.setText(loading ? "Loading..." : "Meet Technician");
+        btnMeetTechnician.setText(loading ? "Memuat..." : "Pilih Teknisi");
     }
 
     private boolean isSelected(CustomerTechnicianResponse technician) {
@@ -361,7 +366,7 @@ public class TechnicianListActivity extends AppCompatActivity {
     }
 
     private String formatJobs(Integer totalJobs) {
-        return (totalJobs == null ? 0 : totalJobs) + " jobs";
+        return (totalJobs == null ? 0 : totalJobs) + " pekerjaan";
     }
 
     private String getInitial(String name) {

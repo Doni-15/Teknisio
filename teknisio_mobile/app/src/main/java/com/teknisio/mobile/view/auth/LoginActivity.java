@@ -1,5 +1,6 @@
 package com.teknisio.mobile.view.auth;
 
+import com.teknisio.mobile.base.BaseActivity;
 import android.view.MotionEvent;
 import android.text.InputType;
 import android.graphics.drawable.Drawable;
@@ -16,15 +17,15 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.teknisio.mobile.R;
 import com.teknisio.mobile.controller.AuthController;
 import com.teknisio.mobile.local.TokenManager;
 import com.teknisio.mobile.model.response.AuthResponse;
 import com.teknisio.mobile.view.customer.CustomerHomeActivity;
+import com.teknisio.mobile.view.technician.TechnicianHomeActivity;
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends BaseActivity {
 
     private EditText edtEmail;
     private EditText edtPassword;
@@ -163,14 +164,7 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onSuccess(AuthResponse authResponse) {
                 setLoading(false);
-
-                if (!tokenManager.isCustomer()) {
-                    tokenManager.clearSession();
-                    Toast.makeText(LoginActivity.this, "Akun ini bukan customer.", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                Toast.makeText(LoginActivity.this, "Login berhasil.", Toast.LENGTH_SHORT).show();
+Toast.makeText(LoginActivity.this, "Login berhasil.", Toast.LENGTH_SHORT).show();
                 goToCustomerHome();
             }
 
@@ -184,11 +178,11 @@ public class LoginActivity extends AppCompatActivity {
 
     private void setLoading(boolean loading) {
         btnLogin.setEnabled(!loading);
-        btnLogin.setText(loading ? "Loading..." : "Confirm");
+        btnLogin.setText(loading ? "Memuat..." : "Masuk");
     }
 
     private void goToCustomerHome() {
-        Intent intent = new Intent(LoginActivity.this, CustomerHomeActivity.class);
+        Intent intent = new Intent(LoginActivity.this, tokenManager.isTechnician() ? TechnicianHomeActivity.class : CustomerHomeActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
     }

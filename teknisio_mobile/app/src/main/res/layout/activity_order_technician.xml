@@ -15,42 +15,33 @@
         android:paddingEnd="22dp"
         android:paddingBottom="34dp">
 
-        <FrameLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="58dp">
+            android:layout_height="54dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-            <FrameLayout
-                android:id="@+id/btnBack"
-                android:layout_width="54dp"
-                android:layout_height="54dp"
-                android:layout_gravity="start|center_vertical"
-                android:background="@drawable/bg_order_back"
-                android:elevation="2dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:text="‹"
-                    android:textColor="#2F4A8A"
-                    android:textSize="38sp" />
-            </FrameLayout>
+            <include layout="@layout/component_back_button" />
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:gravity="center"
-                android:text="Order Technician"
+                android:layout_marginStart="16dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:text="Pesan Teknisi"
                 android:textColor="#1F2329"
-                android:textSize="22sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
-        </FrameLayout>
+        </LinearLayout>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="30dp"
-            android:text="Technician"
+            android:text="Teknisi"
             android:textColor="#1F2329"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -105,52 +96,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="26dp"
-            android:text="Selected Category"
+            android:text="Kategori Perangkat"
             android:textColor="#1F2329"
             android:textSize="20sp"
             android:textStyle="bold" />
-
-        <LinearLayout
-            android:id="@+id/layoutSelectedCategory"
-            android:layout_width="match_parent"
-            android:layout_height="74dp"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_order_card"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="22dp"
-            android:paddingEnd="22dp">
-
-            <FrameLayout
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_order_icon_circle">
-
-                <ImageView
-                    android:id="@+id/imgCategoryIcon"
-                    android:layout_width="27dp"
-                    android:layout_height="27dp"
-                    android:layout_gravity="center"
-                    android:tint="#2F4A8A" />
-            </FrameLayout>
-
-            <TextView
-                android:id="@+id/txtCategoryName"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="22dp"
-                android:layout_weight="1"
-                android:text="Category"
-                android:textColor="#1F2329"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </LinearLayout>
 
         <TextView
             android:id="@+id/txtSelectedSummary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="8dp"
             android:text="Dipilih: -"
             android:textColor="#1F2329"
             android:textSize="15sp"
@@ -160,7 +115,7 @@
             android:id="@+id/layoutSelectedCategories"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="8dp"
             android:background="@drawable/bg_order_card"
             android:orientation="vertical"
             android:padding="16dp" />
@@ -169,7 +124,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="26dp"
-            android:text="Describe Damages"
+            android:text="Deskripsi Kerusakan"
             android:textColor="#1F2329"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -193,7 +148,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="26dp"
-            android:text="Service Address"
+            android:text="Alamat Servis"
             android:textColor="#1F2329"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -228,15 +183,16 @@
             android:textColorHint="#8A949B"
             android:textSize="15sp" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnConfirmOrder"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="28dp"
-            android:background="@drawable/bg_order_primary"
-            android:text="Confirm Order"
+            android:background="@drawable/bg_order_primary_disabled"
+            android:backgroundTint="@null"
+            android:text="Konfirmasi Pesanan"
             android:textAllCaps="false"
-            android:textColor="#D4FFFF"
+            android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:textStyle="bold" />
 

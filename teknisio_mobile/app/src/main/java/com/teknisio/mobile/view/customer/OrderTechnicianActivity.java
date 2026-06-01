@@ -1,20 +1,22 @@
 package com.teknisio.mobile.view.customer;
 
+import android.content.Intent;
+import com.teknisio.mobile.base.BaseActivity;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.teknisio.mobile.R;
 import com.teknisio.mobile.local.TokenManager;
@@ -35,7 +37,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class OrderTechnicianActivity extends AppCompatActivity {
+public class OrderTechnicianActivity extends BaseActivity {
 
     public static final String EXTRA_CATEGORY_ID = "extra_category_id";
     public static final String EXTRA_CATEGORY_NAME = "extra_category_name";
@@ -43,8 +45,6 @@ public class OrderTechnicianActivity extends AppCompatActivity {
     public static final String EXTRA_TECHNICIAN_NAME = "extra_technician_name";
 
     private FrameLayout btnBack;
-    private ImageView imgCategoryIcon;
-    private TextView txtCategoryName;
     private TextView txtTechnicianName;
     private TextView txtTechnicianMeta;
     private LinearLayout layoutSelectedCategories;
@@ -63,6 +63,7 @@ public class OrderTechnicianActivity extends AppCompatActivity {
 
     private CustomerTechnicianResponse selectedTechnician;
     private final List<String> selectedCategoryIds = new ArrayList<>();
+    private boolean isSubmitting = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,15 +78,17 @@ public class OrderTechnicianActivity extends AppCompatActivity {
         technicianName = getIntent().getStringExtra(EXTRA_TECHNICIAN_NAME);
 
         bindViews();
-        setupInitialData();
+
+        if (!setupInitialData()) {
+            return;
+        }
+
         setupActions();
         loadSelectedTechnician();
     }
 
     private void bindViews() {
         btnBack = findViewById(R.id.btnBack);
-        imgCategoryIcon = findViewById(R.id.imgCategoryIcon);
-        txtCategoryName = findViewById(R.id.txtCategoryName);
         txtTechnicianName = findViewById(R.id.txtTechnicianName);
         txtTechnicianMeta = findViewById(R.id.txtTechnicianMeta);
         layoutSelectedCategories = findViewById(R.id.layoutSelectedCategories);
@@ -96,15 +99,12 @@ public class OrderTechnicianActivity extends AppCompatActivity {
         btnConfirmOrder = findViewById(R.id.btnConfirmOrder);
     }
 
-    private void setupInitialData() {
+    private boolean setupInitialData() {
         if (isBlank(categoryId) || isBlank(technicianId)) {
-            Toast.makeText(this, "Data order tidak valid.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Data pesanan tidak valid.", Toast.LENGTH_SHORT).show();
             finish();
-            return;
+            return false;
         }
-
-        txtCategoryName.setText(getCleanCategoryName(categoryName));
-        imgCategoryIcon.setImageResource(getCategoryIconResId(categoryName));
 
         txtTechnicianName.setText(isBlank(technicianName) ? "Teknisi" : technicianName);
 
@@ -114,11 +114,14 @@ public class OrderTechnicianActivity extends AppCompatActivity {
         }
 
         setLoading(false);
+        return true;
     }
 
     private void setupActions() {
         BackButtonHelper.setup(btnBack, this::finish);
         btnConfirmOrder.setOnClickListener(v -> confirmOrder());
+        setupFormWatchers();
+        updateConfirmOrderState();
     }
 
     private void loadSelectedTechnician() {
@@ -207,17 +210,21 @@ public class OrderTechnicianActivity extends AppCompatActivity {
     private void resetSelectedCategories() {
         selectedCategoryIds.clear();
 
-        if (isCategorySupportedByTechnician(categoryId)) {
+        // Default harus mengikuti kategori yang diklik dari Home.
+        // Contoh: klik AC => awalnya hanya AC yang terpilih.
+        if (!isBlank(categoryId) && isCategorySupportedByTechnician(categoryId)) {
             selectedCategoryIds.add(categoryId);
             return;
         }
 
+        // Fallback aman kalau data kategori awal tidak ditemukan.
         List<DeviceCategoryResponse> categories = getSelectableCategories();
 
-        if (!categories.isEmpty()
-                && categories.get(0) != null
-                && !isBlank(categories.get(0).deviceCategoryId)) {
-            selectedCategoryIds.add(categories.get(0).deviceCategoryId);
+        for (DeviceCategoryResponse category : categories) {
+            if (category != null && !isBlank(category.deviceCategoryId)) {
+                selectedCategoryIds.add(category.deviceCategoryId);
+                return;
+            }
         }
     }
 
@@ -225,7 +232,7 @@ public class OrderTechnicianActivity extends AppCompatActivity {
         layoutSelectedCategories.removeAllViews();
 
         TextView hint = new TextView(this);
-        hint.setText("Pilih kategori perangkat yang ingin diperbaiki oleh teknisi ini.");
+        hint.setText("Kategori awal mengikuti pilihan dari Home. Tambahkan kategori lain jika diperlukan.");
         hint.setTextColor(Color.parseColor("#6B7680"));
         hint.setTextSize(13);
         layoutSelectedCategories.addView(hint);
@@ -293,6 +300,7 @@ public class OrderTechnicianActivity extends AppCompatActivity {
         chip.setOnClickListener(v -> {
             toggleCategorySelection(category);
             renderSelectedCategories();
+            updateConfirmOrderState();
         });
 
         return chip;
@@ -305,7 +313,7 @@ public class OrderTechnicianActivity extends AppCompatActivity {
 
         if (selectedCategoryIds.contains(category.deviceCategoryId)) {
             if (selectedCategoryIds.size() == 1) {
-                Toast.makeText(this, "Minimal 1 kategori harus dipilih.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Minimal 1 kategori perangkat harus dipilih.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -319,6 +327,57 @@ public class OrderTechnicianActivity extends AppCompatActivity {
         }
 
         selectedCategoryIds.add(category.deviceCategoryId);
+    }
+
+    private void setupFormWatchers() {
+        TextWatcher watcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Not used
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                updateConfirmOrderState();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // Not used
+            }
+        };
+
+        edtIssueDescription.addTextChangedListener(watcher);
+        edtAddress.addTextChangedListener(watcher);
+        edtAddressDetail.addTextChangedListener(watcher);
+    }
+
+    private void updateConfirmOrderState() {
+        boolean enabled = isOrderFormValid();
+
+        btnConfirmOrder.setEnabled(enabled);
+        btnConfirmOrder.setAlpha(enabled ? 1f : 0.82f);
+        btnConfirmOrder.setBackgroundResource(enabled
+                ? R.drawable.bg_order_primary
+                : R.drawable.bg_order_primary_disabled
+        );
+        btnConfirmOrder.setTextColor(Color.WHITE);
+    }
+
+    private boolean isOrderFormValid() {
+        return !isSubmitting
+                && selectedTechnician != null
+                && !selectedCategoryIds.isEmpty()
+                && !getInputText(edtIssueDescription).isEmpty()
+                && !getInputText(edtAddress).isEmpty();
+    }
+
+    private String getInputText(EditText editText) {
+        if (editText == null || editText.getText() == null) {
+            return "";
+        }
+
+        return editText.getText().toString().trim();
     }
 
     private void confirmOrder() {
@@ -369,7 +428,7 @@ public class OrderTechnicianActivity extends AppCompatActivity {
                         if (!response.isSuccessful()) {
                             Toast.makeText(
                                     OrderTechnicianActivity.this,
-                                    ErrorParser.parseError(response, "Order gagal dibuat."),
+                                    ErrorParser.parseError(response, "Pesanan gagal dibuat."),
                                     Toast.LENGTH_LONG
                             ).show();
                             return;
@@ -380,18 +439,26 @@ public class OrderTechnicianActivity extends AppCompatActivity {
                         if (body == null || !body.success) {
                             Toast.makeText(
                                     OrderTechnicianActivity.this,
-                                    ErrorParser.getBestMessage(body, "Order gagal dibuat."),
+                                    ErrorParser.getBestMessage(body, "Pesanan gagal dibuat."),
                                     Toast.LENGTH_LONG
                             ).show();
                             return;
                         }
 
                         String code = body.data == null ? null : body.data.serviceRequestCode;
+                        String id = body.data == null ? null : body.data.serviceRequestId;
+
                         Toast.makeText(
                                 OrderTechnicianActivity.this,
-                                isBlank(code) ? "Order berhasil dibuat." : "Order berhasil dibuat: " + code,
+                                isBlank(code) ? "Pesanan berhasil dibuat." : "Pesanan berhasil dibuat: " + code,
                                 Toast.LENGTH_LONG
                         ).show();
+
+                        if (!isBlank(id)) {
+                            Intent intent = new Intent(OrderTechnicianActivity.this, ServiceRequestDetailActivity.class);
+                            intent.putExtra(ServiceRequestDetailActivity.EXTRA_SERVICE_REQUEST_ID, id);
+                            startActivity(intent);
+                        }
 
                         finish();
                     }
@@ -484,8 +551,9 @@ public class OrderTechnicianActivity extends AppCompatActivity {
     }
 
     private void setLoading(boolean loading) {
-        btnConfirmOrder.setEnabled(!loading && selectedTechnician != null && !selectedCategoryIds.isEmpty());
-        btnConfirmOrder.setText(loading ? "Creating Order..." : "Confirm Order");
+        isSubmitting = loading;
+        btnConfirmOrder.setText(loading ? "Membuat pesanan..." : "Konfirmasi Pesanan");
+        updateConfirmOrderState();
     }
 
     private String formatRating(BigDecimal rating) {
@@ -497,38 +565,21 @@ public class OrderTechnicianActivity extends AppCompatActivity {
     }
 
     private String formatJobs(Integer totalJobs) {
-        return (totalJobs == null ? 0 : totalJobs) + " jobs";
+        return (totalJobs == null ? 0 : totalJobs) + " pekerjaan";
     }
 
     private String getCleanCategoryName(String name) {
         if (isBlank(name)) {
-            return "Device";
+            return "Perangkat";
         }
 
         String lower = name.toLowerCase();
 
         if (lower.contains("air conditioner")) return "AC";
-        if (lower.contains("refrigerator")) return "Fridge";
+        if (lower.contains("refrigerator")) return "Kulkas";
         if (lower.contains("television")) return "TV";
 
         return name.trim();
-    }
-
-    private int getCategoryIconResId(String name) {
-        if (name == null) return R.drawable.ac;
-
-        String lower = name.toLowerCase();
-
-        if (lower.contains("washing")) return R.drawable.washing_machine;
-        if (lower.contains("rice")) return R.drawable.rice_cooker;
-        if (lower.contains("refrigerator") || lower.contains("fridge") || lower.contains("kulkas")) return R.drawable.refrigerator;
-        if (lower.contains("oven")) return R.drawable.oven;
-        if (lower.contains("television") || lower.equals("tv") || lower.contains("televisi")) return R.drawable.television;
-        if (lower.contains("fan") || lower.contains("kipas")) return R.drawable.fan;
-        if (lower.contains("mixer")) return R.drawable.mixer;
-        if (lower.equals("ac") || lower.contains("air conditioner") || lower.contains("pendingin")) return R.drawable.ac;
-
-        return R.drawable.ac;
     }
 
     private boolean isBlank(String value) {

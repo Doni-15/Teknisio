@@ -1,5 +1,6 @@
 package com.teknisio.mobile.view.auth;
 
+import com.teknisio.mobile.base.BaseActivity;
 import android.view.MotionEvent;
 import android.text.InputType;
 import android.graphics.drawable.Drawable;
@@ -18,16 +19,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.teknisio.mobile.R;
 import com.teknisio.mobile.controller.AuthController;
 import com.teknisio.mobile.local.TokenManager;
 import com.teknisio.mobile.model.response.AuthResponse;
 import com.teknisio.mobile.network.ApiClient;
-import com.teknisio.mobile.view.customer.CustomerHomeActivity;
 
-public class RegisterCustomerActivity extends AppCompatActivity {
+public class RegisterCustomerActivity extends BaseActivity {
 
     private TextView txtTabCustomer;
     private TextView txtTabTechnician;
@@ -137,7 +136,7 @@ public class RegisterCustomerActivity extends AppCompatActivity {
 
                         Toast.makeText(
                                 RegisterCustomerActivity.this,
-                                "Registrasi customer berhasil. Silakan login kembali.",
+                                "Registrasi pelanggan berhasil. Silakan login kembali.",
                                 Toast.LENGTH_LONG
                         ).show();
 
@@ -171,7 +170,7 @@ public class RegisterCustomerActivity extends AppCompatActivity {
 
                         Toast.makeText(
                                 RegisterCustomerActivity.this,
-                                "Registrasi teknisi berhasil. Halaman teknisi belum tersedia.",
+                                "Registrasi teknisi berhasil. Silakan login kembali.",
                                 Toast.LENGTH_LONG
                         ).show();
 
@@ -189,16 +188,10 @@ public class RegisterCustomerActivity extends AppCompatActivity {
 
     private void setLoading(boolean loading) {
         btnRegister.setEnabled(!loading);
-        btnRegister.setText(loading ? "Loading..." : "Confirm");
+        btnRegister.setText(loading ? "Memuat..." : "Daftar");
 
         txtTabCustomer.setEnabled(!loading);
         txtTabTechnician.setEnabled(!loading);
-    }
-
-    private void goToCustomerHome() {
-        Intent intent = new Intent(RegisterCustomerActivity.this, CustomerHomeActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
     }
 
     private void goToLogin() {

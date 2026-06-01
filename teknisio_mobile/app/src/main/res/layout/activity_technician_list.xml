@@ -147,7 +147,7 @@
             android:layout_gravity="center"
             android:background="@drawable/bg_order_primary"
             android:backgroundTint="@null"
-            android:text="Meet Technician"
+            android:text="Pilih Teknisi"
             android:textAllCaps="false"
             android:textColor="#D4FFFF"
             android:textSize="18sp"
