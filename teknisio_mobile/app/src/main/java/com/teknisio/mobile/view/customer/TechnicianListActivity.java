@@ -37,6 +37,7 @@ public class TechnicianListActivity extends BaseActivity {
 
     public static final String EXTRA_CATEGORY_ID = "extra_category_id";
     public static final String EXTRA_CATEGORY_NAME = "extra_category_name";
+    public static final String EXTRA_SHOW_ALL = "extra_show_all";
 
     private FrameLayout btnBack;
     private ImageView imgCategoryIcon;
@@ -48,6 +49,8 @@ public class TechnicianListActivity extends BaseActivity {
 
     private String categoryId;
     private String categoryName;
+    private boolean showAllTechnicians;
+    private int pendingAllTechnicianRequests = 0;
 
     private final List<CustomerTechnicianResponse> technicians = new ArrayList<>();
     private CustomerTechnicianResponse selectedTechnician;
@@ -59,6 +62,7 @@ public class TechnicianListActivity extends BaseActivity {
 
         categoryId = getIntent().getStringExtra(EXTRA_CATEGORY_ID);
         categoryName = getIntent().getStringExtra(EXTRA_CATEGORY_NAME);
+        showAllTechnicians = getIntent().getBooleanExtra(EXTRA_SHOW_ALL, isBlank(categoryId));
 
         bindViews();
 
@@ -81,6 +85,13 @@ public class TechnicianListActivity extends BaseActivity {
     }
 
     private boolean setupInitialData() {
+        if (showAllTechnicians) {
+            txtCategoryName.setText("Semua Teknisi");
+            imgCategoryIcon.setImageResource(R.drawable.ic_account);
+            setLoading(false);
+            return true;
+        }
+
         if (isBlank(categoryId)) {
             Toast.makeText(this, "Kategori tidak valid.", Toast.LENGTH_SHORT).show();
             finish();
@@ -102,6 +113,14 @@ public class TechnicianListActivity extends BaseActivity {
                 return;
             }
 
+            if (showAllTechnicians) {
+                Intent intent = new Intent(TechnicianListActivity.this, TechnicianDetailActivity.class);
+                intent.putExtra(TechnicianDetailActivity.EXTRA_TECHNICIAN_ID, selectedTechnician.technicianProfileId);
+                intent.putExtra(TechnicianDetailActivity.EXTRA_TECHNICIAN_NAME, selectedTechnician.name);
+                startActivity(intent);
+                return;
+            }
+
             Intent intent = new Intent(TechnicianListActivity.this, OrderTechnicianActivity.class);
             intent.putExtra(OrderTechnicianActivity.EXTRA_CATEGORY_ID, categoryId);
             intent.putExtra(OrderTechnicianActivity.EXTRA_CATEGORY_NAME, categoryName);
@@ -112,6 +131,11 @@ public class TechnicianListActivity extends BaseActivity {
     }
 
     private void loadTechnicians() {
+        if (showAllTechnicians) {
+            loadAllTechnicians();
+            return;
+        }
+
         showMessage("Memuat teknisi spesialis " + getCleanCategoryName(categoryName) + "...");
         setLoading(true);
 
@@ -163,6 +187,139 @@ public class TechnicianListActivity extends BaseActivity {
                         showMessage("Tidak bisa terhubung ke server.");
                     }
                 });
+    }
+
+
+    private void loadAllTechnicians() {
+        showMessage("Memuat semua teknisi...");
+        setLoading(true);
+
+        ApiClient.getApiService(this)
+                .getDeviceCategories()
+                .enqueue(new Callback<ApiResponse<List<DeviceCategoryResponse>>>() {
+                    @Override
+                    public void onResponse(
+                            Call<ApiResponse<List<DeviceCategoryResponse>>> call,
+                            Response<ApiResponse<List<DeviceCategoryResponse>>> response
+                    ) {
+                        if (!response.isSuccessful()) {
+                            setLoading(false);
+                            showMessage(ErrorParser.parseError(response, "Kategori perangkat gagal dimuat."));
+                            return;
+                        }
+
+                        ApiResponse<List<DeviceCategoryResponse>> body = response.body();
+
+                        if (body == null || !body.success || body.data == null || body.data.isEmpty()) {
+                            setLoading(false);
+                            showMessage(ErrorParser.getBestMessage(body, "Belum ada kategori perangkat."));
+                            return;
+                        }
+
+                        technicians.clear();
+                        selectedTechnician = null;
+                        pendingAllTechnicianRequests = 0;
+
+                        for (DeviceCategoryResponse category : body.data) {
+                            if (category == null || isBlank(category.deviceCategoryId)) {
+                                continue;
+                            }
+
+                            pendingAllTechnicianRequests++;
+
+                            ApiClient.getApiService(TechnicianListActivity.this)
+                                    .searchTechnicians(category.deviceCategoryId, null, "rating")
+                                    .enqueue(new Callback<ApiResponse<List<CustomerTechnicianResponse>>>() {
+                                        @Override
+                                        public void onResponse(
+                                                Call<ApiResponse<List<CustomerTechnicianResponse>>> call,
+                                                Response<ApiResponse<List<CustomerTechnicianResponse>>> response
+                                        ) {
+                                            if (response.isSuccessful()
+                                                    && response.body() != null
+                                                    && response.body().success
+                                                    && response.body().data != null) {
+                                                for (CustomerTechnicianResponse technician : response.body().data) {
+                                                    addUniqueTechnician(technician);
+                                                }
+                                            }
+
+                                            finishAllTechnicianRequest();
+                                        }
+
+                                        @Override
+                                        public void onFailure(
+                                                Call<ApiResponse<List<CustomerTechnicianResponse>>> call,
+                                                Throwable t
+                                        ) {
+                                            finishAllTechnicianRequest();
+                                        }
+                                    });
+                        }
+
+                        if (pendingAllTechnicianRequests == 0) {
+                            setLoading(false);
+                            showMessage("Belum ada kategori perangkat yang valid.");
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ApiResponse<List<DeviceCategoryResponse>>> call, Throwable t) {
+                        setLoading(false);
+                        showMessage("Tidak bisa terhubung ke server.");
+                    }
+                });
+    }
+
+    private void finishAllTechnicianRequest() {
+        pendingAllTechnicianRequests--;
+
+        if (pendingAllTechnicianRequests > 0) {
+            return;
+        }
+
+        setLoading(false);
+
+        if (technicians.isEmpty()) {
+            selectedTechnician = null;
+            showMessage("Belum ada teknisi terdaftar.");
+            return;
+        }
+
+        selectedTechnician = technicians.get(0);
+        txtTechnicianEmpty.setVisibility(android.view.View.GONE);
+        txtTechnicianCount.setText(technicians.size() + " teknisi tersedia");
+        renderTechnicians();
+    }
+
+    private void addUniqueTechnician(CustomerTechnicianResponse technician) {
+        if (technician == null) {
+            return;
+        }
+
+        for (CustomerTechnicianResponse existing : technicians) {
+            if (isSameTechnician(existing, technician)) {
+                return;
+            }
+        }
+
+        technicians.add(technician);
+    }
+
+    private boolean isSameTechnician(CustomerTechnicianResponse first, CustomerTechnicianResponse second) {
+        if (first == null || second == null) {
+            return false;
+        }
+
+        if (!isBlank(first.technicianProfileId) && !isBlank(second.technicianProfileId)) {
+            return first.technicianProfileId.equals(second.technicianProfileId);
+        }
+
+        if (!isBlank(first.name) && !isBlank(second.name)) {
+            return first.name.equalsIgnoreCase(second.name);
+        }
+
+        return false;
     }
 
     private void renderTechnicians() {
@@ -299,7 +456,7 @@ public class TechnicianListActivity extends BaseActivity {
     private void setLoading(boolean loading) {
         btnMeetTechnician.setEnabled(!loading && selectedTechnician != null);
         btnMeetTechnician.setAlpha((!loading && selectedTechnician != null) ? 1f : 0.55f);
-        btnMeetTechnician.setText(loading ? "Memuat..." : "Pilih Teknisi");
+        btnMeetTechnician.setText(loading ? "Memuat..." : (showAllTechnicians ? "Lihat Profil" : "Pilih Teknisi"));
     }
 
     private boolean isSelected(CustomerTechnicianResponse technician) {
@@ -337,21 +494,23 @@ public class TechnicianListActivity extends BaseActivity {
 
     private String getStatusText(String status) {
         if (isBlank(status)) {
-            return "Available";
+            return "Tersedia";
         }
 
         String normalized = status.trim().replace("_", " ").toLowerCase();
 
-        if (normalized.contains("available") || normalized.contains("online")) {
-            return "Available";
-        }
-
         if (normalized.contains("busy")) {
-            return "Busy";
+            return "Sibuk";
         }
 
-        if (normalized.contains("offline")) {
-            return "Offline";
+        if (normalized.contains("leave") || normalized.contains("cuti")) {
+            return "Cuti";
+        }
+
+        if (normalized.contains("online")
+                || normalized.contains("available")
+                || normalized.contains("offline")) {
+            return "Tersedia";
         }
 
         return status.trim();

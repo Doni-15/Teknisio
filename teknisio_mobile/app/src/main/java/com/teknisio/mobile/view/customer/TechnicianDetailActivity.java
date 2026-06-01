@@ -295,16 +295,18 @@ public class TechnicianDetailActivity extends BaseActivity {
 
         String normalized = status.trim().replace("_", " ").toLowerCase();
 
-        if (normalized.contains("available") || normalized.contains("online")) {
-            return "Tersedia";
-        }
-
         if (normalized.contains("busy")) {
-            return "Busy";
+            return "Sibuk";
         }
 
-        if (normalized.contains("offline")) {
-            return "Offline";
+        if (normalized.contains("leave") || normalized.contains("cuti")) {
+            return "Cuti";
+        }
+
+        if (normalized.contains("online")
+                || normalized.contains("available")
+                || normalized.contains("offline")) {
+            return "Tersedia";
         }
 
         return status.trim();

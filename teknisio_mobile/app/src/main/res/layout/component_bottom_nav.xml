@@ -30,7 +30,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
-            android:text="Home"
+            android:text="Beranda"
             android:textColor="#2F4A8A"
             android:textSize="12sp" />
     </LinearLayout>
@@ -74,7 +74,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
-            android:text="History"
+            android:text="Riwayat"
             android:textColor="#263238"
             android:textSize="12sp" />
     </LinearLayout>
@@ -96,7 +96,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
-            android:text="Account"
+            android:text="Akun"
             android:textColor="#263238"
             android:textSize="12sp" />
     </LinearLayout>

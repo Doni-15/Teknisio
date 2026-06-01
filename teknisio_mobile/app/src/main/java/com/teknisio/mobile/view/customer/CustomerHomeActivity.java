@@ -47,6 +47,9 @@ public class CustomerHomeActivity extends BaseActivity {
     private LinearLayout layoutTechnicians;
     private TextView txtTechnicianEmpty;
     private HorizontalScrollView scrollTechnicians;
+    private TextView txtSeeAllTechnicians;
+    private TextView txtSeeAllNews;
+    private LinearLayout cardNews;
     private FrameLayout btnNotification;
 
     private LinearLayout navChat;
@@ -78,6 +81,7 @@ public class CustomerHomeActivity extends BaseActivity {
         bindViews();
         setupHeader();
         setupNavigation();
+        setupHomeActions();
         setupTechnicianCarouselScroll();
         loadDeviceCategories();
     }
@@ -91,11 +95,47 @@ public class CustomerHomeActivity extends BaseActivity {
         layoutTechnicians = findViewById(R.id.layoutTechnicians);
         txtTechnicianEmpty = findViewById(R.id.txtTechnicianEmpty);
         scrollTechnicians = findViewById(R.id.scrollTechnicians);
+        txtSeeAllTechnicians = findViewById(R.id.txtSeeAllTechnicians);
+        txtSeeAllNews = findViewById(R.id.txtSeeAllNews);
+        cardNews = findViewById(R.id.cardNews);
         btnNotification = findViewById(R.id.btnNotification);
 
         navChat = findViewById(R.id.navChat);
         navHistory = findViewById(R.id.navHistory);
         navAccount = findViewById(R.id.navAccount);
+    }
+
+
+    private void setupHomeActions() {
+        if (txtSeeAllTechnicians != null) {
+            txtSeeAllTechnicians.setOnClickListener(v -> openAllTechnicians());
+        }
+
+        if (txtSeeAllNews != null) {
+            txtSeeAllNews.setOnClickListener(v -> openNewsList());
+        }
+
+        if (cardNews != null) {
+            cardNews.setOnClickListener(v -> openFeaturedNews());
+            cardNews.setClickable(true);
+        }
+    }
+
+    private void openAllTechnicians() {
+        Intent intent = new Intent(CustomerHomeActivity.this, TechnicianListActivity.class);
+        intent.putExtra(TechnicianListActivity.EXTRA_SHOW_ALL, true);
+        startActivity(intent);
+    }
+
+    private void openNewsList() {
+        Intent intent = new Intent(CustomerHomeActivity.this, NewsActivity.class);
+        startActivity(intent);
+    }
+
+    private void openFeaturedNews() {
+        Intent intent = new Intent(CustomerHomeActivity.this, NewsActivity.class);
+        intent.putExtra(NewsActivity.EXTRA_NEWS_ID, NewsActivity.NEWS_ID_FEATURED);
+        startActivity(intent);
     }
 
     private void setupHeader() {

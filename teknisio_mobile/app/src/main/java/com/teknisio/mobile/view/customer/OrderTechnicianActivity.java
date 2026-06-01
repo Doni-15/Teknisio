@@ -232,9 +232,9 @@ public class OrderTechnicianActivity extends BaseActivity {
         layoutSelectedCategories.removeAllViews();
 
         TextView hint = new TextView(this);
-        hint.setText("Kategori awal mengikuti pilihan dari Home. Tambahkan kategori lain jika diperlukan.");
-        hint.setTextColor(Color.parseColor("#6B7680"));
-        hint.setTextSize(13);
+        hint.setText("Kategori bisa disesuaikan sebelum pesanan dibuat.");
+        hint.setTextColor(Color.parseColor("#8A949B"));
+        hint.setTextSize(12);
         layoutSelectedCategories.addView(hint);
 
         txtSelectedSummary.setText(getSelectedCategorySummary());
@@ -262,7 +262,7 @@ public class OrderTechnicianActivity extends BaseActivity {
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT
                 );
-                rowParams.setMargins(0, dp(12), 0, 0);
+                rowParams.setMargins(0, dp(10), 0, 0);
                 row.setLayoutParams(rowParams);
 
                 layoutSelectedCategories.addView(row);
@@ -284,8 +284,8 @@ public class OrderTechnicianActivity extends BaseActivity {
         TextView chip = new TextView(this);
         chip.setText((selected ? "✓ " : "+ ") + getCleanCategoryName(category == null ? null : category.name));
         chip.setGravity(Gravity.CENTER);
-        chip.setPadding(dp(12), dp(8), dp(12), dp(8));
-        chip.setTextSize(13);
+        chip.setPadding(dp(10), dp(7), dp(10), dp(7));
+        chip.setTextSize(12);
         chip.setTypeface(Typeface.DEFAULT_BOLD);
         chip.setTextColor(selected ? Color.WHITE : Color.parseColor("#2F4A8A"));
         chip.setBackgroundResource(selected
@@ -293,7 +293,7 @@ public class OrderTechnicianActivity extends BaseActivity {
                 : R.drawable.bg_category_chip_unselected
         );
 
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(40), 1f);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(38), 1f);
         params.setMargins(0, 0, dp(8), 0);
         chip.setLayoutParams(params);
 

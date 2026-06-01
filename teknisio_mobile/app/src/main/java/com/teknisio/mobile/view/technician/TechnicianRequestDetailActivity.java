@@ -1,8 +1,6 @@
 package com.teknisio.mobile.view.technician;
 
 import android.app.AlertDialog;
-import android.graphics.Color;
-import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.InputType;
@@ -62,7 +60,6 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
     private String serviceRequestId;
     private boolean loading = false;
     private boolean actionLoading = false;
-    private ServiceRequestResponse currentRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -154,8 +151,6 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
     }
 
     private void renderDetail(ServiceRequestResponse request) {
-        currentRequest = request;
-
         txtTechOrderCode.setText(getSafeText(request.serviceRequestCode, "Request"));
         txtTechOrderStatus.setText(OrderStatusHelper.getDisplayStatus(request.status));
         txtTechOrderStatus.setBackground(makeRounded(OrderStatusHelper.getStatusColor(request.status), 16));

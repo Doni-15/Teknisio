@@ -133,14 +133,14 @@ public class TechnicianSkillActivity extends BaseActivity {
                         loading = false;
 
                         if (!response.isSuccessful()) {
-                            showError(ErrorParser.parseError(response, "Skill teknisi gagal dimuat."));
+                            showError(ErrorParser.parseError(response, "Keahlian teknisi gagal dimuat."));
                             return;
                         }
 
                         ApiResponse<List<DeviceCategoryResponse>> body = response.body();
 
                         if (body == null || !body.success) {
-                            showError(ErrorParser.getBestMessage(body, "Skill teknisi gagal dimuat."));
+                            showError(ErrorParser.getBestMessage(body, "Keahlian teknisi gagal dimuat."));
                             return;
                         }
 

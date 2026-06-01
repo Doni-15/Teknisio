@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.appcompat.widget.AppCompatButton;
 
@@ -22,6 +23,7 @@ public class OnboardingActivity extends BaseActivity {
     private View dot2;
     private View dot3;
     private AppCompatButton btnStart;
+    private TextView txtAppVersion;
 
     private int currentIndex = 0;
 
@@ -58,6 +60,8 @@ public class OnboardingActivity extends BaseActivity {
         dot2 = findViewById(R.id.dot2);
         dot3 = findViewById(R.id.dot3);
         btnStart = findViewById(R.id.btnStart);
+        txtAppVersion = findViewById(R.id.txtAppVersion);
+        txtAppVersion.setText(getAppVersionLabel());
 
         setSlide(0, false);
 
@@ -125,4 +129,21 @@ public class OnboardingActivity extends BaseActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
     }
+
+    private String getAppVersionLabel() {
+        try {
+            String versionName = getPackageManager()
+                    .getPackageInfo(getPackageName(), 0)
+                    .versionName;
+
+            if (versionName == null || versionName.trim().isEmpty()) {
+                versionName = "0.9.0";
+            }
+
+            return "v" + versionName + " • MVP Beta";
+        } catch (Exception ignored) {
+            return "v0.9.0 • MVP Beta";
+        }
+    }
+
 }

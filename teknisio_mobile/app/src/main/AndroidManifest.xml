@@ -87,6 +87,10 @@
             android:name=".view.technician.TechnicianHistoryActivity"
             android:exported="false" />
 
+            <activity
+            android:name=".view.customer.NewsActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

@@ -103,7 +103,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="34dp"
-                android:text="Your Order"
+                android:text="Pesanan Kamu"
                 android:textColor="#1F2329"
                 android:textSize="22sp"
                 android:textStyle="bold" />

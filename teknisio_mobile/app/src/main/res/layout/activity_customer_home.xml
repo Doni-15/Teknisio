@@ -54,7 +54,7 @@
                         android:layout_height="wrap_content"
                         android:ellipsize="end"
                         android:maxLines="1"
-                        android:text="Customer"
+                        android:text="Pelanggan"
                         android:textColor="#1F2329"
                         android:textSize="17sp"
                         android:textStyle="bold" />
@@ -108,7 +108,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
-                android:text="Electronic Devices"
+                android:text="Perangkat Elektronik"
                 android:textColor="#1F2329"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -157,7 +157,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Technician Nearby"
+                    android:text="Teknisi Terdekat"
                     android:textColor="#1F2329"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -166,7 +166,7 @@
                     android:id="@+id/txtSeeAllTechnicians"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="See All"
+                    android:text="Lihat Semua"
                     android:textColor="#1F2329"
                     android:textSize="14sp" />
 
@@ -213,7 +213,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="News"
+                    android:text="Artikel"
                     android:textColor="#1F2329"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -222,7 +222,7 @@
                     android:id="@+id/txtSeeAllNews"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="See All"
+                    android:text="Lihat Semua"
                     android:textColor="#1F2329"
                     android:textSize="14sp" />
 
@@ -244,15 +244,14 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <TextView
+                    <ImageView
                         android:layout_width="86dp"
                         android:layout_height="68dp"
                         android:background="@drawable/bg_news_thumb"
-                        android:gravity="center"
-                        android:text="Tips"
-                        android:textColor="#2F4A8A"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:contentDescription="Gambar artikel tips"
+                        android:padding="2dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/tips_news" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -266,7 +265,7 @@
                             android:layout_height="wrap_content"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:text="Cara agar perabotanmu awet"
+                            android:text="Tips merawat alat elektronik rumah tangga"
                             android:textColor="#1F2329"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -277,7 +276,7 @@
                             android:layout_marginTop="5dp"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:text="Mari kita pahami bagaimana cara agar ..."
+                            android:text="Panduan singkat agar perangkat lebih awet."
                             android:textColor="#69757E"
                             android:textSize="12sp" />
 
@@ -305,15 +304,14 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <TextView
+                    <ImageView
                         android:layout_width="86dp"
                         android:layout_height="68dp"
                         android:background="@drawable/bg_news_thumb"
-                        android:gravity="center"
-                        android:text="Alert"
-                        android:textColor="#2F4A8A"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:contentDescription="Gambar artikel peringatan"
+                        android:padding="2dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/alert_news" />
 
                     <LinearLayout
                         android:layout_width="0dp"

@@ -47,7 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:includeFontPadding="false"
-            android:text="Your Service Solution"
+            android:text="Solusi Servis Kamu"
             android:textColor="#1F2329"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -73,7 +73,7 @@
                 android:layout_height="56dp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_auth_input"
-                android:hint="Enter your Email"
+                android:hint="Masukkan email"
                 android:inputType="textEmailAddress"
                 android:paddingStart="18dp"
                 android:paddingEnd="18dp"
@@ -98,7 +98,7 @@
                 android:layout_height="56dp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_auth_input"
-                android:hint="Enter your Password"
+                android:hint="Masukkan password"
                 android:inputType="textPassword"
                 android:paddingStart="18dp"
                 android:paddingEnd="18dp"
@@ -129,7 +129,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
             android:gravity="center"
-            android:text="Did not have account? Register now"
+            android:text="Belum punya akun? Daftar sekarang"
             android:textColor="#1F2329"
             android:textSize="14sp" />
 

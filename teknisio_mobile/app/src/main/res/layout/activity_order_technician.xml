@@ -33,7 +33,7 @@
                 android:maxLines="1"
                 android:text="Pesan Teknisi"
                 android:textColor="#1F2329"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -43,17 +43,17 @@
             android:layout_marginTop="30dp"
             android:text="Teknisi"
             android:textColor="#1F2329"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:background="@drawable/bg_order_card"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="16dp">
+            android:padding="14dp">
 
             <TextView
                 android:layout_width="58dp"
@@ -95,10 +95,10 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="26dp"
+            android:layout_marginTop="22dp"
             android:text="Kategori Perangkat"
             android:textColor="#1F2329"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <TextView
@@ -108,7 +108,7 @@
             android:layout_marginTop="8dp"
             android:text="Dipilih: -"
             android:textColor="#1F2329"
-            android:textSize="15sp"
+            android:textSize="14sp"
             android:textStyle="bold" />
 
         <LinearLayout
@@ -118,46 +118,46 @@
             android:layout_marginTop="8dp"
             android:background="@drawable/bg_order_card"
             android:orientation="vertical"
-            android:padding="16dp" />
+            android:padding="14dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="26dp"
+            android:layout_marginTop="22dp"
             android:text="Deskripsi Kerusakan"
             android:textColor="#1F2329"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <EditText
             android:id="@+id/edtIssueDescription"
             android:layout_width="match_parent"
-            android:layout_height="128dp"
-            android:layout_marginTop="12dp"
+            android:layout_height="112dp"
+            android:layout_marginTop="10dp"
             android:background="@drawable/bg_order_input"
             android:gravity="top|start"
-            android:hint="Contoh: AC tidak dingin dan keluar suara berisik"
+            android:hint="Contoh: AC tidak dingin dan berisik"
             android:inputType="textMultiLine|textCapSentences"
             android:maxLength="1000"
-            android:padding="16dp"
+            android:padding="14dp"
             android:textColor="#1F2329"
             android:textColorHint="#8A949B"
-            android:textSize="15sp" />
+            android:textSize="14sp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="26dp"
+            android:layout_marginTop="22dp"
             android:text="Alamat Servis"
             android:textColor="#1F2329"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <EditText
             android:id="@+id/edtAddress"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:background="@drawable/bg_order_input"
             android:hint="Alamat utama"
             android:inputType="textPostalAddress|textCapSentences"
@@ -166,7 +166,7 @@
             android:paddingEnd="16dp"
             android:textColor="#1F2329"
             android:textColorHint="#8A949B"
-            android:textSize="15sp" />
+            android:textSize="14sp" />
 
         <EditText
             android:id="@+id/edtAddressDetail"
@@ -178,10 +178,10 @@
             android:hint="Detail alamat opsional, contoh: rumah pagar hitam"
             android:inputType="textMultiLine|textCapSentences"
             android:maxLength="500"
-            android:padding="16dp"
+            android:padding="14dp"
             android:textColor="#1F2329"
             android:textColorHint="#8A949B"
-            android:textSize="15sp" />
+            android:textSize="14sp" />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnConfirmOrder"

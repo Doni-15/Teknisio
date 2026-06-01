@@ -29,7 +29,7 @@
                 android:layout_marginStart="16dp"
                 android:layout_weight="1"
                 android:gravity="center_vertical"
-                android:text="Order Detail"
+                android:text="Detail Pesanan"
                 android:textColor="#1F2329"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -168,7 +168,7 @@
             android:layout_marginTop="22dp"
             android:background="@drawable/bg_logout_button"
             android:backgroundTint="@null"
-            android:text="Cancel Order"
+            android:text="Batalkan Pesanan"
             android:textAllCaps="false"
             android:textColor="#FF5A5A"
             android:textSize="17sp"

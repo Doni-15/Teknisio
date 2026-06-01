@@ -31,7 +31,7 @@
                 android:ellipsize="end"
                 android:gravity="center_vertical"
                 android:maxLines="1"
-                android:text="Specialized Technician"
+                android:text="Teknisi Spesialis"
                 android:textColor="#1F2329"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -41,7 +41,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="30dp"
-            android:text="Select Category"
+            android:text="Pilih Teknisi"
             android:textColor="#1F2329"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -77,7 +77,7 @@
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Category"
+                android:text="Kategori"
                 android:textColor="#1F2329"
                 android:textSize="18sp"
                 android:textStyle="bold" />
