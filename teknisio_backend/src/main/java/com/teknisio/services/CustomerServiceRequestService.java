@@ -27,6 +27,9 @@ import com.teknisio.repositories.TeknisiKategoriLayananRepository;
 import com.teknisio.repositories.TeknisiProfileRepository;
 import com.teknisio.repositories.UserRepository;
 import com.teknisio.security.CurrentUserService;
+import com.teknisio.dto.responses.ServiceRequestStatusHistoryResponse;
+import com.teknisio.model.entities.RiwayatStatus;
+import com.teknisio.repositories.RiwayatStatusRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +53,7 @@ public class CustomerServiceRequestService {
   private final TeknisiKategoriLayananRepository teknisiKategoriLayananRepository;
   private final PermintaanLayananRepository permintaanLayananRepository;
   private final PermintaanLayananKategoriRepository permintaanLayananKategoriRepository;
+  private final RiwayatStatusRepository riwayatStatusRepository;
 
   @Transactional
   public ServiceRequestResponse createServiceRequest(CreateServiceRequestRequest request) {
@@ -122,6 +126,22 @@ public class CustomerServiceRequestService {
     PermintaanLayanan serviceRequest = getOwnedServiceRequest(idPermintaan, customer);
 
     return toResponse(serviceRequest);
+  }
+
+  @Transactional(readOnly = true)
+  public List<ServiceRequestStatusHistoryResponse> getMyServiceRequestStatusHistory(
+    String serviceRequestId
+  ) {
+    User customer = getCurrentActiveCustomer();
+    UUID idPermintaan = parseServiceRequestId(serviceRequestId);
+
+    PermintaanLayanan serviceRequest = getOwnedServiceRequest(idPermintaan, customer);
+
+    return riwayatStatusRepository
+      .findByPermintaan_IdPermintaanOrderByCreatedAtAsc(serviceRequest.getIdPermintaan())
+      .stream()
+      .map(this::toStatusHistoryResponse)
+      .toList();
   }
 
   @Transactional
@@ -269,6 +289,19 @@ public class CustomerServiceRequestService {
     }
 
     throw new ConflictException("Service request cannot be cancelled from status " + status);
+  }
+
+  private ServiceRequestStatusHistoryResponse toStatusHistoryResponse(RiwayatStatus history) {
+    User changedBy = history.getDiubahOleh();
+  
+    return new ServiceRequestStatusHistoryResponse(
+      history.getIdRiwayat(),
+      history.getStatusSebelum(),
+      history.getStatusSesudah(),
+      history.getCatatan(),
+      changedBy == null ? null : changedBy.getIdUser(),
+      history.getCreatedAt()
+    );
   }
 
   private ServiceRequestResponse toResponse(PermintaanLayanan serviceRequest) {

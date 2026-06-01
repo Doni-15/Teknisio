@@ -1,5 +1,6 @@
 package com.teknisio.services;
 
+import com.teknisio.common.exception.BadRequestException;
 import com.teknisio.common.exception.ConflictException;
 import com.teknisio.common.exception.UnauthorizedException;
 import com.teknisio.common.util.TextUtil;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -126,6 +128,71 @@ public class AuthService {
     User user = userRepository.findByIdUserAndDeletedAtIsNull(currentUserId)
       .orElseThrow(() -> new UnauthorizedException("Unauthorized"));
 
+    return buildUserProfileResponse(user);
+  }
+
+@Transactional
+public UserProfileResponse updateProfile(Map<String, String> request) {
+  if (request == null || request.isEmpty()) {
+    throw new BadRequestException("Request body is required");
+  }
+
+  UUID currentUserId = currentUserService.getCurrentUserId();
+
+  User user = userRepository.findByIdUserAndDeletedAtIsNull(currentUserId)
+    .orElseThrow(() -> new UnauthorizedException("Unauthorized"));
+
+  if (request.containsKey("name")) {
+    String name = TextUtil.trim(request.get("name"));
+
+    if (TextUtil.isBlank(name)) {
+      throw new BadRequestException("Name is required");
+    }
+
+    user.setNama(name);
+  }
+
+  if (request.containsKey("phoneNumber")) {
+    String phoneNumber = TextUtil.trim(request.get("phoneNumber"));
+
+    if (TextUtil.isBlank(phoneNumber)) {
+      throw new BadRequestException("Phone number is required");
+    }
+
+    if (!phoneNumber.matches("^\\+?[0-9]{10,15}$")) {
+      throw new BadRequestException("Phone number must be 10-15 digits and may start with +");
+    }
+
+    if (!phoneNumber.equals(user.getNoTelepon())) {
+      if (userRepository.existsByNoTeleponAndIdUserNotAndDeletedAtIsNull(phoneNumber, user.getIdUser())) {
+        throw new ConflictException("Phone number is already registered");
+      }
+
+      user.setNoTelepon(phoneNumber);
+    }
+  }
+
+  if (request.containsKey("profilePhoto")) {
+    String profilePhoto = TextUtil.trim(request.get("profilePhoto"));
+    user.setFotoProfil(TextUtil.isBlank(profilePhoto) ? null : profilePhoto);
+  }
+
+  if (request.containsKey("address")) {
+    String address = TextUtil.trim(request.get("address"));
+
+    if (TextUtil.isBlank(address)) {
+      throw new BadRequestException("Address is required");
+    }
+
+    user.setAlamat(address);
+  }
+
+  User savedUser = userRepository.save(user);
+
+  return buildUserProfileResponse(savedUser);
+} 
+
+  private UserProfileResponse buildUserProfileResponse(User user) {
     UUID technicianProfileId = null;
 
     if (user.getRole() == UserRole.TECHNICIAN) {

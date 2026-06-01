@@ -66,6 +66,7 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/api/device-categories/**").permitAll()
 
         .requestMatchers(HttpMethod.GET, "/api/auth/profile").authenticated()
+        .requestMatchers(HttpMethod.PUT, "/api/users/me").authenticated()
 
         .requestMatchers("/api/customers/**").hasRole("CUSTOMER")
         .requestMatchers("/api/technicians/**").hasRole("TECHNICIAN")
