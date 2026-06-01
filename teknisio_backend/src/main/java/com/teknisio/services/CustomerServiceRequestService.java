@@ -10,6 +10,9 @@ import com.teknisio.dto.requests.CancelServiceRequestRequest;
 import com.teknisio.dto.requests.CreateServiceRequestRequest;
 import com.teknisio.dto.responses.DeviceCategoryResponse;
 import com.teknisio.dto.responses.ServiceRequestResponse;
+import com.teknisio.dto.responses.ServiceRequestStatusHistoryResponse;
+import com.teknisio.dto.requests.CreateReviewRequest;
+import com.teknisio.dto.responses.ReviewResponse;
 import com.teknisio.model.entities.KategoriLayanan;
 import com.teknisio.model.entities.PermintaanLayanan;
 import com.teknisio.model.entities.PermintaanLayananKategori;
@@ -20,16 +23,17 @@ import com.teknisio.model.entities.User;
 import com.teknisio.model.enums.RequestStatus;
 import com.teknisio.model.enums.UserRole;
 import com.teknisio.model.enums.UserStatus;
+import com.teknisio.model.entities.RiwayatStatus;
+import com.teknisio.model.entities.Review;
 import com.teknisio.repositories.KategoriLayananRepository;
 import com.teknisio.repositories.PermintaanLayananKategoriRepository;
 import com.teknisio.repositories.PermintaanLayananRepository;
 import com.teknisio.repositories.TeknisiKategoriLayananRepository;
 import com.teknisio.repositories.TeknisiProfileRepository;
 import com.teknisio.repositories.UserRepository;
-import com.teknisio.security.CurrentUserService;
-import com.teknisio.dto.responses.ServiceRequestStatusHistoryResponse;
-import com.teknisio.model.entities.RiwayatStatus;
+import com.teknisio.repositories.ReviewRepository;
 import com.teknisio.repositories.RiwayatStatusRepository;
+import com.teknisio.security.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +45,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Service
 @RequiredArgsConstructor
@@ -54,6 +60,7 @@ public class CustomerServiceRequestService {
   private final PermintaanLayananRepository permintaanLayananRepository;
   private final PermintaanLayananKategoriRepository permintaanLayananKategoriRepository;
   private final RiwayatStatusRepository riwayatStatusRepository;
+  private final ReviewRepository reviewRepository;
 
   @Transactional
   public ServiceRequestResponse createServiceRequest(CreateServiceRequestRequest request) {
@@ -164,6 +171,36 @@ public class CustomerServiceRequestService {
     PermintaanLayanan savedServiceRequest = permintaanLayananRepository.saveAndFlush(serviceRequest);
 
     return toResponse(savedServiceRequest);
+  }
+
+  @Transactional
+  public ReviewResponse createReview(
+    String serviceRequestId,
+    CreateReviewRequest request
+  ) {
+    User customer = getCurrentActiveCustomer();
+    UUID idPermintaan = parseServiceRequestId(serviceRequestId);
+
+    PermintaanLayanan serviceRequest = getOwnedServiceRequest(idPermintaan, customer);
+
+    validateReviewableStatus(serviceRequest);
+    validateReviewDoesNotExist(serviceRequest);
+
+    TeknisiProfile technicianProfile = serviceRequest.getTeknisiProfile();
+
+    Review review = Review.builder()
+      .permintaan(serviceRequest)
+      .customer(customer)
+      .teknisiProfile(technicianProfile)
+      .rating(request.rating())
+      .comment(TextUtil.trim(request.comment()))
+      .build();
+
+    Review savedReview = reviewRepository.saveAndFlush(review);
+
+    updateTechnicianRating(technicianProfile, request.rating());
+
+    return toReviewResponse(savedReview);
   }
 
   private User getCurrentActiveCustomer() {
@@ -289,6 +326,66 @@ public class CustomerServiceRequestService {
     }
 
     throw new ConflictException("Service request cannot be cancelled from status " + status);
+  }
+
+  private void validateReviewableStatus(PermintaanLayanan serviceRequest) {
+    if (serviceRequest.getStatus() == RequestStatus.COMPLETED) {
+      return;
+    }
+
+    throw new ConflictException(
+      "Service request can only be reviewed after completed"
+    );
+  }
+
+  private void validateReviewDoesNotExist(PermintaanLayanan serviceRequest) {
+    boolean reviewExists = reviewRepository.existsByPermintaan_IdPermintaan(
+      serviceRequest.getIdPermintaan()
+    );
+
+    if (reviewExists) {
+      throw new ConflictException("Service request already has a review");
+    }
+  }
+
+  private void updateTechnicianRating(
+    TeknisiProfile technicianProfile,
+    Integer newRating
+  ) {
+    Integer currentCount = technicianProfile.getRatingCount() == null
+      ? 0
+      : technicianProfile.getRatingCount();
+
+    BigDecimal currentAverage = technicianProfile.getRatingAvg() == null
+      ? BigDecimal.ZERO
+      : technicianProfile.getRatingAvg();
+
+    int newCount = currentCount + 1;
+
+    BigDecimal totalRating = currentAverage
+      .multiply(BigDecimal.valueOf(currentCount))
+      .add(BigDecimal.valueOf(newRating));
+
+    BigDecimal newAverage = totalRating
+      .divide(BigDecimal.valueOf(newCount), 2, RoundingMode.HALF_UP);
+
+    technicianProfile.setRatingCount(newCount);
+    technicianProfile.setRatingAvg(newAverage);
+
+    teknisiProfileRepository.save(technicianProfile);
+  }
+
+  private ReviewResponse toReviewResponse(Review review) {
+    return new ReviewResponse(
+      review.getIdReview(),
+      review.getPermintaan().getIdPermintaan(),
+      review.getCustomer().getIdUser(),
+      review.getTeknisiProfile().getIdTeknisiProfile(),
+      review.getRating(),
+      review.getComment(),
+      review.getCreatedAt(),
+      review.getUpdatedAt()
+    );
   }
 
   private ServiceRequestStatusHistoryResponse toStatusHistoryResponse(RiwayatStatus history) {

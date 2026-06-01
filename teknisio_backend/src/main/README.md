@@ -1837,12 +1837,12 @@ Catatan:
 
 ## BE-80 [MVP] Review schema
 
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Buat tabel `review`
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Relasi ke `permintaan_layanan`
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Relasi ke customer
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Relasi ke technician profile
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Rating 1 sampai 5
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Satu request hanya boleh satu review
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Buat tabel `review`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Relasi ke `permintaan_layanan`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Relasi ke customer
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Relasi ke technician profile
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Rating 1 sampai 5
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Satu request hanya boleh satu review
 
 Candidate columns:
 
