@@ -5,6 +5,7 @@ import com.teknisio.dto.requests.CancelServiceRequestRequest;
 import com.teknisio.dto.requests.CreateServiceRequestRequest;
 import com.teknisio.dto.responses.ServiceRequestResponse;
 import com.teknisio.services.CustomerServiceRequestService;
+import com.teknisio.dto.responses.ServiceRequestStatusHistoryResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -57,6 +58,18 @@ public class CustomerServiceRequestController {
 
     return ResponseEntity.ok(
       ApiResponse.success("Service request retrieved successfully", response)
+    );
+  }
+
+  @GetMapping("/{serviceRequestId}/status-history")
+  public ResponseEntity<ApiResponse<List<ServiceRequestStatusHistoryResponse>>> getMyServiceRequestStatusHistory(
+    @PathVariable String serviceRequestId
+  ) {
+    List<ServiceRequestStatusHistoryResponse> response =
+      customerServiceRequestService.getMyServiceRequestStatusHistory(serviceRequestId);
+  
+    return ResponseEntity.ok(
+      ApiResponse.success("Service request status history retrieved successfully", response)
     );
   }
 

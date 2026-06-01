@@ -1719,12 +1719,12 @@ Catatan penting:
 
 Target next immediate setelah BE-55 selesai. Database trigger status history sudah aktif, sehingga modul ini fokus expose read API.
 
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint customer: `GET /api/customers/service-requests/{serviceRequestId}/status-history`
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Endpoint technician: `GET /api/technicians/service-requests/{serviceRequestId}/status-history`
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Customer hanya bisa melihat history request miliknya
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Technician hanya bisa melihat history request yang ditujukan kepadanya
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Sort by `createdAt ASC`
-- ![todo](https://img.shields.io/badge/%5Btodo%5D-lightgrey?style=flat-square) Response field English
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint customer: `GET /api/customers/service-requests/{serviceRequestId}/status-history`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Endpoint technician: `GET /api/technicians/service-requests/{serviceRequestId}/status-history`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Customer hanya bisa melihat history request miliknya
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Technician hanya bisa melihat history request yang ditujukan kepadanya
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Sort by `createdAt ASC`
+- ![finished](https://img.shields.io/badge/%5Bfinished%5D-brightgreen?style=flat-square) Response field English
 
 Planned response item:
 
