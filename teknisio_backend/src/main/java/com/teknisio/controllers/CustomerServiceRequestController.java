@@ -4,6 +4,8 @@ import com.teknisio.common.response.ApiResponse;
 import com.teknisio.dto.requests.CancelServiceRequestRequest;
 import com.teknisio.dto.requests.CreateServiceRequestRequest;
 import com.teknisio.dto.responses.ServiceRequestResponse;
+import com.teknisio.dto.requests.CreateReviewRequest;
+import com.teknisio.dto.responses.ReviewResponse;
 import com.teknisio.services.CustomerServiceRequestService;
 import com.teknisio.dto.responses.ServiceRequestStatusHistoryResponse;
 import jakarta.validation.Valid;
@@ -86,5 +88,20 @@ public class CustomerServiceRequestController {
     return ResponseEntity.ok(
       ApiResponse.success("Service request cancelled successfully", response)
     );
+  }
+
+  @PostMapping("/{serviceRequestId}/review")
+  public ResponseEntity<ApiResponse<ReviewResponse>> createReview(
+    @PathVariable String serviceRequestId,
+    @Valid @RequestBody CreateReviewRequest request
+  ) {
+    ReviewResponse response = customerServiceRequestService.createReview(
+      serviceRequestId,
+      request
+    );
+
+    return ResponseEntity
+      .status(HttpStatus.CREATED)
+      .body(ApiResponse.success("Review created successfully", response));
   }
 }
