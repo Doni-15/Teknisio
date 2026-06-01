@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-    <!-- rgba(169, 228, 234, 0.45) = light teal -->
-    <solid android:color="#73A9E4EA"/>
-</shape>
