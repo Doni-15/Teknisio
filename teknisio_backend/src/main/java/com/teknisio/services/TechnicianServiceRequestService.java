@@ -22,6 +22,9 @@ import com.teknisio.repositories.PermintaanLayananRepository;
 import com.teknisio.repositories.TeknisiKategoriLayananRepository;
 import com.teknisio.repositories.TeknisiProfileRepository;
 import com.teknisio.security.CurrentUserService;
+import com.teknisio.dto.responses.ServiceRequestStatusHistoryResponse;
+import com.teknisio.model.entities.RiwayatStatus;
+import com.teknisio.repositories.RiwayatStatusRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,6 +46,7 @@ public class TechnicianServiceRequestService {
   private final PermintaanLayananRepository permintaanLayananRepository;
   private final PermintaanLayananKategoriRepository permintaanLayananKategoriRepository;
   private final TeknisiKategoriLayananRepository teknisiKategoriLayananRepository;
+  private final RiwayatStatusRepository riwayatStatusRepository;
   private final EntityManager entityManager;
 
   @Transactional(readOnly = true)
@@ -86,6 +90,24 @@ public class TechnicianServiceRequestService {
     );
 
     return toResponse(serviceRequest);
+  }
+
+  @Transactional(readOnly = true)
+  public List<ServiceRequestStatusHistoryResponse> getMyServiceRequestStatusHistory(
+    String serviceRequestId
+  ) {
+    TeknisiProfile technicianProfile = getCurrentActiveTechnicianProfile();
+
+    PermintaanLayanan serviceRequest = getOwnedServiceRequest(
+      technicianProfile,
+      serviceRequestId
+    );
+
+    return riwayatStatusRepository
+      .findByPermintaan_IdPermintaanOrderByCreatedAtAsc(serviceRequest.getIdPermintaan())
+      .stream()
+      .map(this::toStatusHistoryResponse)
+      .toList();
   }
 
   @Transactional
@@ -288,6 +310,19 @@ public class TechnicianServiceRequestService {
       .map(PermintaanLayananKategori::getKategori)
       .filter(category -> category != null && category.getDeletedAt() == null && Boolean.TRUE.equals(category.getAktif()))
       .toList();
+  }
+
+  private ServiceRequestStatusHistoryResponse toStatusHistoryResponse(RiwayatStatus history) {
+    User changedBy = history.getDiubahOleh();
+  
+    return new ServiceRequestStatusHistoryResponse(
+      history.getIdRiwayat(),
+      history.getStatusSebelum(),
+      history.getStatusSesudah(),
+      history.getCatatan(),
+      changedBy == null ? null : changedBy.getIdUser(),
+      history.getCreatedAt()
+    );
   }
 
   private TechnicianServiceRequestResponse toResponse(PermintaanLayanan serviceRequest) {
