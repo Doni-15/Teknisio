@@ -206,6 +206,7 @@ public class TechnicianServiceRequestService {
     serviceRequest.setBiayaAkhir(request.finalCost());
     serviceRequest.setCatatanTeknisi(TextUtil.trim(request.technicianNote()));
     serviceRequest.setStatus(RequestStatus.COMPLETED);
+    incrementTechnicianCompletedJobs(technicianProfile);
     serviceRequest.setDiubahOlehTerakhir(technicianProfile.getUser());
     setTechnicianAvailability(technicianProfile, TeknisiStatus.ONLINE);
 
@@ -226,6 +227,19 @@ public class TechnicianServiceRequestService {
     }
 
     technicianProfile.setStatusKetersediaan(status);
+    teknisiProfileRepository.save(technicianProfile);
+  }
+
+  private void incrementTechnicianCompletedJobs(TeknisiProfile technicianProfile) {
+    if (technicianProfile == null) {
+      return;
+    }
+
+    int currentTotal = technicianProfile.getTotalPekerjaan() == null
+      ? 0
+      : technicianProfile.getTotalPekerjaan();
+
+    technicianProfile.setTotalPekerjaan(currentTotal + 1);
     teknisiProfileRepository.save(technicianProfile);
   }
 
