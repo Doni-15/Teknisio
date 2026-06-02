@@ -8,14 +8,18 @@ import com.teknisio.mobile.model.request.CancelServiceRequestRequest;
 import com.teknisio.mobile.model.request.CompleteServiceRequestRequest;
 import com.teknisio.mobile.model.request.RejectServiceRequestRequest;
 import com.teknisio.mobile.model.request.AddTechnicianDeviceCategoryRequest;
+import com.teknisio.mobile.model.request.CreateReviewRequest;
 import com.teknisio.mobile.model.response.ApiResponse;
 import com.teknisio.mobile.model.response.AuthResponse;
 import com.teknisio.mobile.model.response.AuthUserResponse;
 import com.teknisio.mobile.model.response.CustomerTechnicianResponse;
 import com.teknisio.mobile.model.response.DeviceCategoryResponse;
+import com.teknisio.mobile.model.response.ReviewResponse;
 import com.teknisio.mobile.model.response.ServiceRequestResponse;
+import com.teknisio.mobile.model.response.StatusHistoryResponse;
 
 import java.util.List;
+import java.util.Map;
 
 import okhttp3.ResponseBody;
 
@@ -25,6 +29,7 @@ import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -126,10 +131,28 @@ public interface ApiService {
             @Body CompleteServiceRequestRequest request
     );
 
+    @GET("api/customers/service-requests/{serviceRequestId}/status-history")
+    Call<ApiResponse<List<StatusHistoryResponse>>> getMyServiceRequestStatusHistory(
+            @Path("serviceRequestId") String serviceRequestId
+    );
+
+    @GET("api/technicians/service-requests/{serviceRequestId}/status-history")
+    Call<ApiResponse<List<StatusHistoryResponse>>> getTechnicianServiceRequestStatusHistory(
+            @Path("serviceRequestId") String serviceRequestId
+    );
+
+    @POST("api/customers/service-requests/{serviceRequestId}/review")
+    Call<ApiResponse<ReviewResponse>> createReview(
+            @Path("serviceRequestId") String serviceRequestId,
+            @Body CreateReviewRequest request
+    );
+
+    @PUT("api/users/me")
+    Call<ApiResponse<AuthUserResponse>> updateProfile(@Body Map<String, String> request);
+
     @GET("api/notifications")
     Call<ResponseBody> getNotifications();
 
     @PATCH("api/notifications/{notificationId}/read")
     Call<ResponseBody> markNotificationRead(@Path("notificationId") String notificationId);
 }
-

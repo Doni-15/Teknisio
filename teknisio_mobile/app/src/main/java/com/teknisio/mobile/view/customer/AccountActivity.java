@@ -1,10 +1,12 @@
 package com.teknisio.mobile.view.customer;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -19,9 +21,14 @@ import com.teknisio.mobile.local.TokenManager;
 import com.teknisio.mobile.model.response.ApiResponse;
 import com.teknisio.mobile.model.response.AuthUserResponse;
 import com.teknisio.mobile.network.ApiClient;
+import com.teknisio.mobile.util.AppToast;
 import com.teknisio.mobile.util.BackButtonHelper;
+import com.teknisio.mobile.util.ErrorParser;
 import com.teknisio.mobile.view.auth.LoginActivity;
 import com.teknisio.mobile.view.technician.TechnicianSkillActivity;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -155,7 +162,17 @@ public class AccountActivity extends BaseActivity {
 
 
         cardAccountInfo.addView(createDivider());
-        cardAccountInfo.addView(createMultilineInfoRow("Alamat", isBlank(address) ? "-" : address.trim()));
+        cardAccountInfo.addView(createEditableMultilineRow(
+                "Alamat",
+                isBlank(address) ? "-" : address.trim(),
+                () -> showEditFieldDialog(
+                        "Ubah Alamat",
+                        "Alamat lengkap",
+                        tokenManager.getAddress(),
+                        "address",
+                        true
+                )
+        ));
 
         if (isTechnicianRole(role)) {
 
@@ -295,6 +312,132 @@ public class AccountActivity extends BaseActivity {
         return row;
     }
 
+    private LinearLayout createEditableMultilineRow(String label, String value, Runnable onEdit) {
+        LinearLayout row = new LinearLayout(this);
+        row.setTag(EXTRA_ROW_TAG);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.TOP);
+        row.setPadding(dp(28), dp(16), dp(20), dp(16));
+        row.setMinimumHeight(dp(92));
+        row.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout textCol = new LinearLayout(this);
+        textCol.setOrientation(LinearLayout.VERTICAL);
+        textCol.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView txtLabel = new TextView(this);
+        txtLabel.setText(label);
+        txtLabel.setTextColor(Color.parseColor("#6B7680"));
+        txtLabel.setTextSize(13);
+
+        TextView txtValue = new TextView(this);
+        txtValue.setText(isBlank(value) ? "-" : value.trim());
+        txtValue.setTextColor(Color.parseColor("#1F2329"));
+        txtValue.setTextSize(15);
+        txtValue.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        txtValue.setSingleLine(false);
+        txtValue.setLineSpacing(dp(3), 1.0f);
+
+        LinearLayout.LayoutParams valueParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        valueParams.setMargins(0, dp(5), 0, 0);
+        txtValue.setLayoutParams(valueParams);
+
+        textCol.addView(txtLabel);
+        textCol.addView(txtValue);
+
+        android.widget.ImageView editIcon = new android.widget.ImageView(this);
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(24), dp(24));
+        iconParams.setMargins(dp(8), dp(4), 0, 0);
+        editIcon.setLayoutParams(iconParams);
+        editIcon.setImageResource(R.drawable.ic_edit);
+        editIcon.setOnClickListener(v -> { if (onEdit != null) onEdit.run(); });
+
+        row.addView(textCol);
+        row.addView(editIcon);
+        return row;
+    }
+
+    private void showEditFieldDialog(String title, String hint, String currentValue, String fieldKey, boolean multiline) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(title);
+
+        final EditText input = new EditText(this);
+        input.setHint(hint);
+        input.setText(isBlank(currentValue) ? "" : currentValue.trim());
+        if (multiline) {
+            input.setSingleLine(false);
+            input.setMaxLines(4);
+            input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        } else {
+            input.setSingleLine(true);
+            if ("phoneNumber".equals(fieldKey)) {
+                input.setInputType(android.text.InputType.TYPE_CLASS_PHONE);
+            } else {
+                input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+            }
+        }
+        int pad = dp(16);
+        input.setPadding(pad, pad, pad, pad);
+
+        builder.setView(input);
+        builder.setNegativeButton("Batal", (d, w) -> d.dismiss());
+        builder.setPositiveButton("Simpan", (d, w) -> {
+            String newValue = input.getText() == null ? "" : input.getText().toString().trim();
+            if (newValue.isEmpty()) {
+                AppToast.error(this, hint + " tidak boleh kosong.");
+                return;
+            }
+            submitProfileUpdate(fieldKey, newValue);
+        });
+        builder.show();
+    }
+
+    private void submitProfileUpdate(String fieldKey, String newValue) {
+        Map<String, String> body = new HashMap<>();
+        body.put(fieldKey, newValue);
+
+        ApiClient.getApiService(this)
+                .updateProfile(body)
+                .enqueue(new Callback<ApiResponse<AuthUserResponse>>() {
+                    @Override
+                    public void onResponse(
+                            Call<ApiResponse<AuthUserResponse>> call,
+                            Response<ApiResponse<AuthUserResponse>> response
+                    ) {
+                        if (!response.isSuccessful()) {
+                            AppToast.error(AccountActivity.this,
+                                    ErrorParser.parseError(response, "Gagal memperbarui profil."));
+                            return;
+                        }
+                        ApiResponse<AuthUserResponse> body = response.body();
+                        if (body == null || !body.success || body.data == null) {
+                            AppToast.error(AccountActivity.this,
+                                    ErrorParser.getBestMessage(body, "Gagal memperbarui profil."));
+                            return;
+                        }
+                        tokenManager.saveUser(body.data);
+                        renderProfile(
+                                body.data.name,
+                                body.data.email,
+                                body.data.phoneNumber,
+                                body.data.accountStatus,
+                                body.data.profilePhoto,
+                                body.data.role,
+                                body.data.address,
+                                body.data.technicianProfileId
+                        );
+                        AppToast.success(AccountActivity.this, "Profil berhasil diperbarui.");
+                    }
+
+                    @Override
+                    public void onFailure(Call<ApiResponse<AuthUserResponse>> call, Throwable t) {
+                        AppToast.error(AccountActivity.this, "Tidak bisa terhubung ke server.");
+                    }
+                });
+    }
+
     private void openTechnicianSkills() {
         Intent intent = new Intent(AccountActivity.this, TechnicianSkillActivity.class);
         startActivity(intent);
@@ -304,15 +447,23 @@ public class AccountActivity extends BaseActivity {
         BackButtonHelper.setup(btnBack, this::finish);
 
         if (btnEditName != null) {
-            btnEditName.setOnClickListener(v ->
-                    Toast.makeText(this, "Fitur ubah nama belum tersedia.", Toast.LENGTH_SHORT).show()
-            );
+            btnEditName.setOnClickListener(v -> showEditFieldDialog(
+                    "Ubah Nama",
+                    "Nama",
+                    tokenManager.getName(),
+                    "name",
+                    false
+            ));
         }
 
         if (btnEditPhone != null) {
-            btnEditPhone.setOnClickListener(v ->
-                    Toast.makeText(this, "Fitur ubah nomor telepon belum tersedia.", Toast.LENGTH_SHORT).show()
-            );
+            btnEditPhone.setOnClickListener(v -> showEditFieldDialog(
+                    "Ubah Nomor Telepon",
+                    "Nomor Telepon (contoh: 08123456789)",
+                    tokenManager.getPhoneNumber(),
+                    "phoneNumber",
+                    false
+            ));
         }
 
         if (rowLanguage != null) {
