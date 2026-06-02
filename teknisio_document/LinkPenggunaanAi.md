@@ -1,5 +1,5 @@
 # Doni Rivaldo Simamora
 
 ```text
-https://chatgpt.com/share/6a152040-b934-83ec-af65-0b1a1f9848b1
+https://chatgpt.com/share/6a1e8ff4-d060-83ec-8875-12a90ccb45d5
 ```
