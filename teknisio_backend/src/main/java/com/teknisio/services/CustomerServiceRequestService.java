@@ -390,7 +390,7 @@ public class CustomerServiceRequestService {
 
   private ServiceRequestStatusHistoryResponse toStatusHistoryResponse(RiwayatStatus history) {
     User changedBy = history.getDiubahOleh();
-  
+
     return new ServiceRequestStatusHistoryResponse(
       history.getIdRiwayat(),
       history.getStatusSebelum(),
@@ -428,15 +428,26 @@ public class CustomerServiceRequestService {
       serviceRequest.getIdPermintaan(),
       serviceRequest.getKodePermintaan(),
       serviceRequest.getPengguna().getIdUser(),
+      serviceRequest.getPengguna().getNama(),
+      serviceRequest.getPengguna().getNoTelepon(),
+      serviceRequest.getPengguna().getFotoProfil(),
       serviceRequest.getTeknisiProfile().getIdTeknisiProfile(),
       serviceRequest.getStatus(),
       serviceRequest.getDeskripsiMasalah(),
       serviceRequest.getAlamat(),
       serviceRequest.getDetailAlamat(),
+      serviceRequest.getEstimasiBiaya(),
+      serviceRequest.getBiayaAkhir(),
+      serviceRequest.getCatatanTeknisi(),
       serviceRequest.getAlasanBatal(),
+      serviceRequest.getAlasanTolak(),
       selectedDeviceCategories,
       serviceRequest.getWaktuPermintaan(),
-      serviceRequest.getWaktuDibatalkan()
+      serviceRequest.getWaktuDiterima(),
+      serviceRequest.getWaktuDiproses(),
+      serviceRequest.getWaktuSelesai(),
+      serviceRequest.getWaktuDibatalkan(),
+      serviceRequest.getWaktuDitolak()
     );
   }
 }

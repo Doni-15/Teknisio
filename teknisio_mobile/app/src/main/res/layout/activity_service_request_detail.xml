@@ -152,6 +152,27 @@
             android:visibility="gone" />
 
         <TextView
+            android:id="@+id/txtStatusHistoryLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Riwayat Status"
+            android:textColor="#1F2329"
+            android:textSize="19sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/layoutStatusHistory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_order_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/txtDetailMessage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -171,6 +192,20 @@
             android:text="Batalkan Pesanan"
             android:textAllCaps="false"
             android:textColor="#FF5A5A"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnWriteReview"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_order_primary"
+            android:backgroundTint="@null"
+            android:text="Tulis Ulasan"
+            android:textAllCaps="false"
+            android:textColor="#D4FFFF"
             android:textSize="17sp"
             android:textStyle="bold"
             android:visibility="gone" />
