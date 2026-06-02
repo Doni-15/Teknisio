@@ -18,10 +18,8 @@ import android.widget.TextView;
 import com.teknisio.mobile.R;
 import com.teknisio.mobile.base.BaseActivity;
 import com.teknisio.mobile.model.request.CancelServiceRequestRequest;
-import com.teknisio.mobile.model.request.CreateReviewRequest;
 import com.teknisio.mobile.model.response.ApiResponse;
 import com.teknisio.mobile.model.response.DeviceCategoryResponse;
-import com.teknisio.mobile.model.response.ReviewResponse;
 import com.teknisio.mobile.model.response.ServiceRequestResponse;
 import com.teknisio.mobile.model.response.StatusHistoryResponse;
 import com.teknisio.mobile.network.ApiClient;
@@ -31,6 +29,7 @@ import com.teknisio.mobile.util.ErrorParser;
 import com.teknisio.mobile.util.OrderStatusHelper;
 import com.teknisio.mobile.util.ReviewStateStore;
 import com.teknisio.mobile.util.StatusHistoryRenderer;
+import com.teknisio.mobile.view.customer.helper.ReviewDialogHelper;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -218,218 +217,10 @@ public class ServiceRequestDetailActivity extends BaseActivity {
     // -------------------------------------------------------------------------
 
     private void showReviewDialog() {
-        if (currentOrder == null) return;
-
-        Dialog reviewDialog = new Dialog(this);
-        reviewDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        // Build dialog content programmatically
-        LinearLayout container = new LinearLayout(this);
-        container.setOrientation(LinearLayout.VERTICAL);
-        container.setPadding(dp(24), dp(24), dp(24), dp(24));
-        container.setBackgroundResource(R.drawable.bg_dialog_card);
-
-        TextView title = new TextView(this);
-        title.setText("Tulis Ulasan");
-        title.setTextColor(Color.parseColor("#1F2329"));
-        title.setTextSize(18);
-        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-
-        TextView ratingLabel = new TextView(this);
-        ratingLabel.setText("Rating (1-5)");
-        ratingLabel.setTextColor(Color.parseColor("#6B7680"));
-        ratingLabel.setTextSize(13);
-        LinearLayout.LayoutParams ratingLabelParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        ratingLabelParams.setMargins(0, dp(16), 0, dp(4));
-        ratingLabel.setLayoutParams(ratingLabelParams);
-
-        EditText edtRating = new EditText(this);
-        edtRating.setHint("Masukkan rating 1-5");
-        edtRating.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        edtRating.setSingleLine(true);
-        edtRating.setBackground(getResources().getDrawable(R.drawable.bg_dialog_input, getTheme()));
-
-        TextView commentLabel = new TextView(this);
-        commentLabel.setText("Komentar (opsional)");
-        commentLabel.setTextColor(Color.parseColor("#6B7680"));
-        commentLabel.setTextSize(13);
-        LinearLayout.LayoutParams commentLabelParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        commentLabelParams.setMargins(0, dp(12), 0, dp(4));
-        commentLabel.setLayoutParams(commentLabelParams);
-
-        EditText edtComment = new EditText(this);
-        edtComment.setHint("Bagikan pengalaman kamu...");
-        edtComment.setSingleLine(false);
-        edtComment.setMaxLines(4);
-        edtComment.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        edtComment.setBackground(getResources().getDrawable(R.drawable.bg_dialog_input, getTheme()));
-
-        TextView errorText = new TextView(this);
-        errorText.setTextColor(Color.parseColor("#C62828"));
-        errorText.setTextSize(12);
-        errorText.setVisibility(View.GONE);
-        LinearLayout.LayoutParams errorParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        errorParams.setMargins(0, dp(6), 0, 0);
-        errorText.setLayoutParams(errorParams);
-
-        // Buttons row
-        LinearLayout btnRow = new LinearLayout(this);
-        btnRow.setOrientation(LinearLayout.HORIZONTAL);
-        LinearLayout.LayoutParams btnRowParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        btnRowParams.setMargins(0, dp(20), 0, 0);
-        btnRow.setLayoutParams(btnRowParams);
-
-        Button btnCancel = new Button(this);
-        btnCancel.setText("Batal");
-        btnCancel.setAllCaps(false);
-        btnCancel.setBackground(getResources().getDrawable(R.drawable.bg_dialog_secondary_button, getTheme()));
-        LinearLayout.LayoutParams cancelParams = new LinearLayout.LayoutParams(0, dp(46), 1f);
-        cancelParams.setMargins(0, 0, dp(8), 0);
-        btnCancel.setLayoutParams(cancelParams);
-        btnCancel.setOnClickListener(v -> reviewDialog.dismiss());
-
-        Button btnSubmit = new Button(this);
-        btnSubmit.setText("Kirim");
-        btnSubmit.setAllCaps(false);
-        btnSubmit.setBackground(getResources().getDrawable(R.drawable.bg_order_primary, getTheme()));
-        btnSubmit.setTextColor(Color.parseColor("#D4FFFF"));
-        LinearLayout.LayoutParams submitParams = new LinearLayout.LayoutParams(0, dp(46), 1f);
-        submitParams.setMargins(dp(8), 0, 0, 0);
-        btnSubmit.setLayoutParams(submitParams);
-        btnSubmit.setOnClickListener(v -> {
-            String ratingStr = edtRating.getText() == null ? "" : edtRating.getText().toString().trim();
-            if (ratingStr.isEmpty()) {
-                errorText.setText("Rating wajib diisi.");
-                errorText.setVisibility(View.VISIBLE);
-                return;
-            }
-            int ratingVal;
-            try {
-                ratingVal = Integer.parseInt(ratingStr);
-            } catch (Exception e) {
-                errorText.setText("Rating harus berupa angka.");
-                errorText.setVisibility(View.VISIBLE);
-                return;
-            }
-            if (ratingVal < 1 || ratingVal > 5) {
-                errorText.setText("Rating harus antara 1 dan 5.");
-                errorText.setVisibility(View.VISIBLE);
-                return;
-            }
-            String comment = edtComment.getText() == null ? null : edtComment.getText().toString().trim();
-            errorText.setVisibility(View.GONE);
-            btnSubmit.setEnabled(false);
-            submitReview(ratingVal, (comment == null || comment.isEmpty()) ? null : comment, reviewDialog, btnSubmit);
+        ReviewDialogHelper.show(this, serviceRequestId, () -> {
+            hasReview = true;
+            btnWriteReview.setVisibility(View.GONE);
         });
-
-        btnRow.addView(btnCancel);
-        btnRow.addView(btnSubmit);
-
-        container.addView(title);
-        container.addView(ratingLabel);
-        container.addView(edtRating);
-        container.addView(commentLabel);
-        container.addView(edtComment);
-        container.addView(errorText);
-        container.addView(btnRow);
-
-        reviewDialog.setContentView(container);
-        reviewDialog.setCanceledOnTouchOutside(true);
-        reviewDialog.show();
-
-        Window window = reviewDialog.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
-            window.setLayout(
-                    getResources().getDisplayMetrics().widthPixels - dp(44),
-                    WindowManager.LayoutParams.WRAP_CONTENT
-            );
-        }
-    }
-
-    private void submitReview(int rating, String comment, Dialog dialog, Button btnSubmit) {
-        ApiClient.getApiService(this)
-                .createReview(serviceRequestId, new CreateReviewRequest(rating, comment))
-                .enqueue(new Callback<ApiResponse<ReviewResponse>>() {
-                    @Override
-                    public void onResponse(
-                            Call<ApiResponse<ReviewResponse>> call,
-                            Response<ApiResponse<ReviewResponse>> response
-                    ) {
-                        if (!response.isSuccessful()) {
-                            String errorMessage = ErrorParser.parseError(response, "Gagal mengirim ulasan.");
-
-                            if (isDuplicateReviewMessage(errorMessage)) {
-                                ReviewStateStore.markReviewed(ServiceRequestDetailActivity.this, serviceRequestId);
-                                hasReview = true;
-                                btnWriteReview.setVisibility(View.GONE);
-
-                                if (dialog != null && dialog.isShowing()) {
-                                    dialog.dismiss();
-                                }
-
-                                AppToast.warning(ServiceRequestDetailActivity.this, "Order ini sudah pernah diulas.");
-                                return;
-                            }
-
-                            if (btnSubmit != null) {
-                                btnSubmit.setEnabled(true);
-                            }
-
-                            AppToast.error(ServiceRequestDetailActivity.this, errorMessage);
-                            return;
-                        }
-
-                        ApiResponse<ReviewResponse> body = response.body();
-
-                        if (body == null || !body.success) {
-                            String errorMessage = ErrorParser.getBestMessage(body, "Gagal mengirim ulasan.");
-
-                            if (btnSubmit != null) {
-                                btnSubmit.setEnabled(true);
-                            }
-
-                            AppToast.error(ServiceRequestDetailActivity.this, errorMessage);
-                            return;
-                        }
-
-                        if (dialog != null && dialog.isShowing()) {
-                            dialog.dismiss();
-                        }
-
-                        ReviewStateStore.markReviewed(ServiceRequestDetailActivity.this, serviceRequestId);
-                        hasReview = true;
-                        btnWriteReview.setVisibility(View.GONE);
-                        AppToast.success(ServiceRequestDetailActivity.this, "Ulasan berhasil dikirim!");
-                    }
-
-                    @Override
-                    public void onFailure(Call<ApiResponse<ReviewResponse>> call, Throwable t) {
-                        if (btnSubmit != null) {
-                            btnSubmit.setEnabled(true);
-                        }
-
-                        AppToast.error(ServiceRequestDetailActivity.this, "Tidak bisa terhubung ke server.");
-                    }
-                });
-    }
-
-    private boolean isDuplicateReviewMessage(String message) {
-        if (isBlank(message)) {
-            return false;
-        }
-
-        String normalized = message.toLowerCase();
-
-        return normalized.contains("already")
-                || normalized.contains("duplicate")
-                || normalized.contains("pernah")
-                || normalized.contains("sudah")
-                || normalized.contains("review");
     }
 
     // -------------------------------------------------------------------------

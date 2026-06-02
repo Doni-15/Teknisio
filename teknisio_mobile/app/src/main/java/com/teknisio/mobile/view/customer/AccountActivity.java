@@ -1,12 +1,10 @@
 package com.teknisio.mobile.view.customer;
 
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -25,10 +23,9 @@ import com.teknisio.mobile.util.AppToast;
 import com.teknisio.mobile.util.BackButtonHelper;
 import com.teknisio.mobile.util.ErrorParser;
 import com.teknisio.mobile.view.auth.LoginActivity;
+import com.teknisio.mobile.view.customer.helper.ProfileEditDialogHelper;
 import com.teknisio.mobile.view.technician.TechnicianSkillActivity;
 
-import java.util.HashMap;
-import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -360,115 +357,20 @@ public class AccountActivity extends BaseActivity {
     }
 
     private void showEditFieldDialog(String title, String hint, String currentValue, String fieldKey, boolean multiline) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(title);
+        ProfileEditDialogHelper.show(this, title, hint, currentValue, fieldKey, multiline, profile -> {
+            tokenManager.saveUser(profile);
 
-        final EditText input = new EditText(this);
-        input.setHint(hint);
-        input.setText(isBlank(currentValue) ? "" : currentValue.trim());
-
-        if (multiline) {
-            input.setSingleLine(false);
-            input.setMaxLines(4);
-            input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        } else {
-            input.setSingleLine(true);
-
-            if ("phoneNumber".equals(fieldKey)) {
-                input.setInputType(android.text.InputType.TYPE_CLASS_PHONE);
-            } else {
-                input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);
-            }
-        }
-
-        int pad = dp(16);
-        input.setPadding(pad, pad, pad, pad);
-
-        builder.setView(input);
-        builder.setNegativeButton("Batal", null);
-        builder.setPositiveButton("Simpan", null);
-
-        AlertDialog dialog = builder.create();
-
-        dialog.setOnShowListener(d -> {
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(v -> dialog.dismiss());
-
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-                String newValue = input.getText() == null ? "" : input.getText().toString().trim();
-
-                if (newValue.isEmpty()) {
-                    AppToast.error(this, hint + " tidak boleh kosong.");
-                    input.requestFocus();
-                    return;
-                }
-
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
-                submitProfileUpdate(fieldKey, newValue, dialog);
-            });
+            renderProfile(
+                    profile.name,
+                    profile.email,
+                    profile.phoneNumber,
+                    profile.accountStatus,
+                    profile.profilePhoto,
+                    profile.role,
+                    profile.address,
+                    profile.technicianProfileId
+            );
         });
-
-        dialog.show();
-    }
-
-    private void submitProfileUpdate(String fieldKey, String newValue, AlertDialog dialog) {
-        Map<String, String> body = new HashMap<>();
-        body.put(fieldKey, newValue);
-
-        ApiClient.getApiService(this)
-                .updateProfile(body)
-                .enqueue(new Callback<ApiResponse<AuthUserResponse>>() {
-                    @Override
-                    public void onResponse(
-                            Call<ApiResponse<AuthUserResponse>> call,
-                            Response<ApiResponse<AuthUserResponse>> response
-                    ) {
-                        if (!response.isSuccessful()) {
-                            reEnableProfileDialogButton(dialog);
-                            AppToast.error(AccountActivity.this,
-                                    ErrorParser.parseError(response, "Gagal memperbarui profil."));
-                            return;
-                        }
-                        ApiResponse<AuthUserResponse> body = response.body();
-                        if (body == null || !body.success || body.data == null) {
-                            reEnableProfileDialogButton(dialog);
-                            AppToast.error(AccountActivity.this,
-                                    ErrorParser.getBestMessage(body, "Gagal memperbarui profil."));
-                            return;
-                        }
-                        tokenManager.saveUser(body.data);
-                        renderProfile(
-                                body.data.name,
-                                body.data.email,
-                                body.data.phoneNumber,
-                                body.data.accountStatus,
-                                body.data.profilePhoto,
-                                body.data.role,
-                                body.data.address,
-                                body.data.technicianProfileId
-                        );
-                        if (dialog != null && dialog.isShowing()) {
-                            dialog.dismiss();
-                        }
-
-                        AppToast.success(AccountActivity.this, "Profil berhasil diperbarui.");
-                    }
-
-                    @Override
-                    public void onFailure(Call<ApiResponse<AuthUserResponse>> call, Throwable t) {
-                        reEnableProfileDialogButton(dialog);
-                        AppToast.error(AccountActivity.this, "Tidak bisa terhubung ke server.");
-                    }
-                });
-    }
-
-    private void reEnableProfileDialogButton(AlertDialog dialog) {
-        if (dialog == null || !dialog.isShowing()) {
-            return;
-        }
-
-        if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
-        }
     }
 
     private void openTechnicianSkills() {

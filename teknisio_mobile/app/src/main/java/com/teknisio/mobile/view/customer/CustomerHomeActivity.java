@@ -28,6 +28,8 @@ import com.teknisio.mobile.model.response.CustomerTechnicianResponse;
 import com.teknisio.mobile.model.response.DeviceCategoryResponse;
 import com.teknisio.mobile.network.ApiClient;
 import com.teknisio.mobile.view.auth.LoginActivity;
+import com.teknisio.mobile.view.customer.helper.CustomerCategoryRenderer;
+import com.teknisio.mobile.view.customer.helper.CustomerTechnicianCardRenderer;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -320,149 +322,18 @@ public class CustomerHomeActivity extends BaseActivity {
     }
 
     private void renderCategories() {
-        txtCategoryEmpty.setVisibility(android.view.View.GONE);
-        gridCategories.setVisibility(android.view.View.VISIBLE);
-        gridCategories.removeAllViews();
-
-        int maxItems = Math.min(categories.size(), 8);
-
-        for (int i = 0; i < maxItems; i++) {
-            DeviceCategoryResponse category = categories.get(i);
-            gridCategories.addView(createCategoryItem(category));
-        }
-    }
-
-    private LinearLayout createCategoryItem(DeviceCategoryResponse category) {
-        boolean selected = category != null
-                && category.deviceCategoryId != null
-                && category.deviceCategoryId.equals(selectedCategoryId);
-
-        LinearLayout item = new LinearLayout(this);
-        item.setOrientation(LinearLayout.VERTICAL);
-        item.setGravity(Gravity.CENTER);
-        item.setPadding(dp(4), dp(8), dp(4), dp(8));
-
-        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-        params.width = 0;
-        params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-        params.setMargins(dp(2), dp(4), dp(2), dp(8));
-        item.setLayoutParams(params);
-
-        FrameLayout iconCircle = new FrameLayout(this);
-        LinearLayout.LayoutParams iconCircleParams = new LinearLayout.LayoutParams(dp(54), dp(54));
-        iconCircle.setLayoutParams(iconCircleParams);
-        iconCircle.setBackground(makeOval(selected ? "#C8F1F5" : "#DDF8FA"));
-
-        int iconResId = getCategoryIconResId(category == null ? null : category.name);
-
-        if (iconResId != 0) {
-            ImageView iconImage = new ImageView(this);
-
-            FrameLayout.LayoutParams imageParams = new FrameLayout.LayoutParams(
-                    dp(31),
-                    dp(31),
-                    Gravity.CENTER
-            );
-
-            iconImage.setLayoutParams(imageParams);
-            iconImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            iconImage.setImageResource(iconResId);
-
-            iconCircle.addView(iconImage);
-        } else {
-            TextView fallbackIcon = new TextView(this);
-
-            FrameLayout.LayoutParams fallbackParams = new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-            );
-
-            fallbackIcon.setLayoutParams(fallbackParams);
-            fallbackIcon.setGravity(Gravity.CENTER);
-            fallbackIcon.setText(getCategoryShortName(category == null ? null : category.name));
-            fallbackIcon.setTextColor(Color.parseColor("#2F4A8A"));
-            fallbackIcon.setTextSize(13);
-            fallbackIcon.setTypeface(Typeface.DEFAULT_BOLD);
-
-            iconCircle.addView(fallbackIcon);
-        }
-
-        TextView name = new TextView(this);
-        LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+        CustomerCategoryRenderer.render(
+                this,
+                gridCategories,
+                txtCategoryEmpty,
+                categories,
+                selectedCategoryId,
+                category -> {
+                    selectedCategoryId = category.deviceCategoryId;
+                    renderCategories();
+                    openOrderByCategory(category);
+                }
         );
-        nameParams.setMargins(0, dp(9), 0, 0);
-        name.setLayoutParams(nameParams);
-        name.setGravity(Gravity.CENTER);
-        name.setText(getCategoryDisplayName(category == null ? null : category.name));
-        name.setTextColor(selected ? Color.parseColor("#2F4A8A") : Color.parseColor("#1F2329"));
-        name.setTextSize(13);
-        name.setTypeface(selected ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
-        name.setMaxLines(2);
-        name.setEllipsize(TextUtils.TruncateAt.END);
-
-        item.addView(iconCircle);
-        item.addView(name);
-
-        item.setOnClickListener(v -> {
-            if (category == null || category.deviceCategoryId == null) {
-                return;
-            }
-
-            selectedCategoryId = category.deviceCategoryId;
-            renderCategories();
-            openOrderByCategory(category);
-        });
-
-        return item;
-    }
-
-    private String getCategoryDisplayName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return "-";
-        }
-
-        String lower = name.toLowerCase().trim();
-
-        if (lower.equals("ac")
-                || lower.contains("air conditioner")
-                || lower.contains("pendingin")) {
-            return "AC";
-        }
-
-        if (lower.contains("washing") || lower.contains("wash") || lower.contains("cuci")) {
-            return "Washing\nMachine";
-        }
-
-        if (lower.contains("rice") || lower.contains("nasi")) {
-            return "Rice\nCooker";
-        }
-
-        if (lower.contains("fridge")
-                || lower.contains("refrigerator")
-                || lower.contains("kulkas")) {
-            return "Fridge";
-        }
-
-        if (lower.contains("television") || lower.equals("tv") || lower.contains("televisi")) {
-            return "TV";
-        }
-
-        if (lower.contains("oven")) {
-            return "Oven";
-        }
-
-        if (lower.contains("fan") || lower.contains("kipas")) {
-            return "Fan";
-        }
-
-        if (lower.contains("mixer")) {
-            return "Mixer";
-        }
-
-        return name.trim();
     }
 
     private void openOrderByCategory(DeviceCategoryResponse category) {
@@ -477,55 +348,9 @@ public class CustomerHomeActivity extends BaseActivity {
         intent.putExtra(TechnicianListActivity.EXTRA_CATEGORY_ID, category.deviceCategoryId);
         intent.putExtra(
                 TechnicianListActivity.EXTRA_CATEGORY_NAME,
-                getCategoryDisplayName(category.name).replace("\n", " ")
+                CustomerCategoryRenderer.getCategoryDisplayName(category.name).replace("\n", " ")
         );
         startActivity(intent);
-    }
-
-    private int getCategoryIconResId(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return 0;
-        }
-
-        String lower = name.toLowerCase().trim();
-
-        if (lower.contains("washing") || lower.contains("wash") || lower.contains("cuci")) {
-            return R.drawable.washing_machine;
-        }
-
-        if (lower.contains("rice") || lower.contains("nasi")) {
-            return R.drawable.rice_cooker;
-        }
-
-        if (lower.contains("fridge")
-                || lower.contains("refrigerator")
-                || lower.contains("kulkas")) {
-            return R.drawable.refrigerator;
-        }
-
-        if (lower.contains("oven")) {
-            return R.drawable.oven;
-        }
-
-        if (lower.contains("television") || lower.equals("tv") || lower.contains("televisi")) {
-            return R.drawable.television;
-        }
-
-        if (lower.contains("fan") || lower.contains("kipas")) {
-            return R.drawable.fan;
-        }
-
-        if (lower.contains("mixer")) {
-            return R.drawable.mixer;
-        }
-
-        if (lower.equals("ac")
-                || lower.contains("air conditioner")
-                || lower.contains("pendingin")) {
-            return R.drawable.ac;
-        }
-
-        return 0;
     }
 
     private void renderTechnicians(List<CustomerTechnicianResponse> technicians) {
@@ -551,7 +376,7 @@ public class CustomerHomeActivity extends BaseActivity {
         }
 
         for (CustomerTechnicianResponse technician : carouselTechnicians) {
-            layoutTechnicians.addView(createTechnicianCard(technician));
+            layoutTechnicians.addView(CustomerTechnicianCardRenderer.create(this, technician, this::openTechnicianInfo));
         }
 
         if (realTechnicianCount <= 1) {
@@ -657,127 +482,6 @@ public class CustomerHomeActivity extends BaseActivity {
         return Math.max(0, centeredX);
     }
 
-    private LinearLayout createTechnicianCard(CustomerTechnicianResponse technician) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(14), dp(14), dp(14), dp(14));
-        card.setBackground(makeStrokeRounded("#FFFFFF", "#DCE6EB", 18, 1));
-        card.setElevation(dp(2));
-
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(dp(240), ViewGroup.LayoutParams.WRAP_CONTENT);
-        cardParams.setMargins(0, 0, dp(14), dp(6));
-        card.setLayoutParams(cardParams);
-
-        // Top row
-        LinearLayout topRow = new LinearLayout(this);
-        topRow.setOrientation(LinearLayout.HORIZONTAL);
-        topRow.setGravity(Gravity.CENTER_VERTICAL);
-
-        TextView avatar = new TextView(this);
-        LinearLayout.LayoutParams avatarParams = new LinearLayout.LayoutParams(dp(52), dp(52));
-        avatar.setLayoutParams(avatarParams);
-        avatar.setGravity(Gravity.CENTER);
-        avatar.setBackground(makeOval("#EAF4FF"));
-        avatar.setText(getInitial(technician == null ? null : technician.name));
-        avatar.setTextColor(Color.parseColor("#2F4A8A"));
-        avatar.setTextSize(22);
-        avatar.setTypeface(Typeface.DEFAULT_BOLD);
-
-        LinearLayout infoWrap = new LinearLayout(this);
-        LinearLayout.LayoutParams infoWrapParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        infoWrapParams.setMargins(dp(12), 0, dp(8), 0);
-        infoWrap.setLayoutParams(infoWrapParams);
-        infoWrap.setOrientation(LinearLayout.VERTICAL);
-
-        TextView name = new TextView(this);
-        name.setText(technician == null || technician.name == null ? "Teknisi" : technician.name);
-        name.setTextColor(Color.parseColor("#1F2329"));
-        name.setTextSize(17);
-        name.setTypeface(Typeface.DEFAULT_BOLD);
-        name.setMaxLines(1);
-        name.setEllipsize(TextUtils.TruncateAt.END);
-
-        TextView skill = new TextView(this);
-        skill.setText(getTechnicianSubtext(technician));
-        skill.setTextColor(Color.parseColor("#6B7680"));
-        skill.setTextSize(13);
-        skill.setMaxLines(2);
-        skill.setEllipsize(TextUtils.TruncateAt.END);
-
-        infoWrap.addView(name);
-        infoWrap.addView(skill);
-
-        TextView ratingChip = new TextView(this);
-        ratingChip.setPadding(dp(10), dp(5), dp(10), dp(5));
-        ratingChip.setBackground(makeStrokeRounded("#F5FAFF", "#D6E4F0", 12, 1));
-        ratingChip.setText("★ " + formatRating(technician == null ? null : technician.averageRating));
-        ratingChip.setTextColor(Color.parseColor("#2F4A8A"));
-        ratingChip.setTextSize(12);
-        ratingChip.setTypeface(Typeface.DEFAULT_BOLD);
-
-        topRow.addView(avatar);
-        topRow.addView(infoWrap);
-        topRow.addView(ratingChip);
-
-        // Divider spacing
-        TextView spacer = new TextView(this);
-        spacer.setHeight(dp(10));
-
-        // Stats row
-        LinearLayout statsRow = new LinearLayout(this);
-        statsRow.setOrientation(LinearLayout.HORIZONTAL);
-        statsRow.setGravity(Gravity.CENTER_VERTICAL);
-
-        TextView jobsChip = new TextView(this);
-        jobsChip.setPadding(dp(10), dp(5), dp(10), dp(5));
-        jobsChip.setBackground(makeStrokeRounded("#F8FBFC", "#E1EAEE", 12, 1));
-        jobsChip.setText(formatJobs(technician == null ? null : technician.totalJobs));
-        jobsChip.setTextColor(Color.parseColor("#5F6B73"));
-        jobsChip.setTextSize(12);
-
-        TextView statusChip = new TextView(this);
-        LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-        );
-        statusParams.setMargins(dp(8), 0, 0, 0);
-        statusChip.setLayoutParams(statusParams);
-        statusChip.setPadding(dp(10), dp(5), dp(10), dp(5));
-        statusChip.setBackground(makeStrokeRounded("#EDF9F0", "#CFE9D6", 12, 1));
-        statusChip.setText("Tersedia");
-        statusChip.setTextColor(Color.parseColor("#2E7D32"));
-        statusChip.setTextSize(12);
-
-        statsRow.addView(jobsChip);
-        statsRow.addView(statusChip);
-
-        // Button row
-        TextView button = new TextView(this);
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(38)
-        );
-        buttonParams.setMargins(0, dp(12), 0, 0);
-        button.setLayoutParams(buttonParams);
-        button.setGravity(Gravity.CENTER);
-        button.setBackground(makeRounded("#445D9B", 12));
-        button.setText("More Info");
-        button.setTextColor(Color.WHITE);
-        button.setTextSize(13);
-        button.setTypeface(Typeface.DEFAULT_BOLD);
-
-        card.addView(topRow);
-        card.addView(spacer);
-        card.addView(statsRow);
-        card.addView(button);
-
-button.setOnClickListener(v -> openTechnicianInfo(technician));
-
-        card.setOnClickListener(v -> openTechnicianInfo(technician));
-
-        return card;
-    }
-
     private void showCategoryMessage(String message) {
         gridCategories.setVisibility(android.view.View.GONE);
         txtCategoryEmpty.setVisibility(android.view.View.VISIBLE);
@@ -789,79 +493,6 @@ button.setOnClickListener(v -> openTechnicianInfo(technician));
         scrollTechnicians.setVisibility(android.view.View.GONE);
         txtTechnicianEmpty.setVisibility(android.view.View.VISIBLE);
         txtTechnicianEmpty.setText(message);
-    }
-
-    private String getCategoryShortName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return "DV";
-        }
-
-        String lower = name.toLowerCase();
-
-        if (lower.contains("air") || lower.contains("ac")) return "AC";
-        if (lower.contains("tv") || lower.contains("television")) return "TV";
-        if (lower.contains("fan")) return "FN";
-        if (lower.contains("rice")) return "RC";
-        if (lower.contains("wash")) return "WM";
-        if (lower.contains("fridge") || lower.contains("kulkas")) return "FR";
-        if (lower.contains("oven")) return "OV";
-
-        String[] parts = name.trim().split("\\s+");
-
-        if (parts.length == 1) {
-            return parts[0].substring(0, Math.min(2, parts[0].length())).toUpperCase();
-        }
-
-        String first = parts[0].substring(0, 1);
-        String second = parts[1].substring(0, 1);
-        return (first + second).toUpperCase();
-    }
-
-    private String getTechnicianSubtext(CustomerTechnicianResponse technician) {
-        if (technician == null) {
-            return "Teknisi terdaftar";
-        }
-
-        if (technician.supportedDeviceCategories != null && !technician.supportedDeviceCategories.isEmpty()) {
-            StringBuilder builder = new StringBuilder();
-
-            int limit = Math.min(technician.supportedDeviceCategories.size(), 2);
-
-            for (int i = 0; i < limit; i++) {
-                DeviceCategoryResponse category = technician.supportedDeviceCategories.get(i);
-
-                if (category != null && category.name != null) {
-                    if (builder.length() > 0) {
-                        builder.append(" • ");
-                    }
-
-                    builder.append(category.name);
-                }
-            }
-
-            if (builder.length() > 0) {
-                return builder.toString();
-            }
-        }
-
-        if (technician.description != null && !technician.description.trim().isEmpty()) {
-            return technician.description.trim();
-        }
-
-        return "Teknisi terdaftar";
-    }
-
-    private String formatRating(BigDecimal rating) {
-        if (rating == null) {
-            return "0.0";
-        }
-
-        return rating.setScale(1, java.math.RoundingMode.HALF_UP).toPlainString();
-    }
-
-    private String formatJobs(Integer totalJobs) {
-        int jobs = totalJobs == null ? 0 : totalJobs;
-        return jobs + " pekerjaan";
     }
 
     private void openTechnicianInfo(CustomerTechnicianResponse technician) {

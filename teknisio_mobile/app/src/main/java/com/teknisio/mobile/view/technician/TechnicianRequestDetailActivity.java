@@ -1,12 +1,8 @@
 package com.teknisio.mobile.view.technician;
 
-import android.app.AlertDialog;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.text.InputType;
-import android.text.TextUtils;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -28,6 +24,7 @@ import com.teknisio.mobile.util.OrderStatusHelper;
 import com.teknisio.mobile.util.StatusHistoryRenderer;
 import com.teknisio.mobile.util.TextHelper;
 import com.teknisio.mobile.util.ViewHelper;
+import com.teknisio.mobile.view.technician.helper.TechnicianRequestActionDialogHelper;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -263,97 +260,19 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
     }
 
     private void confirmAccept() {
-        new AlertDialog.Builder(this)
-                .setTitle("Terima request?")
-                .setMessage("Request akan masuk ke daftar pekerjaan kamu.")
-                .setNegativeButton("Batal", null)
-                .setPositiveButton("Terima", (dialog, which) -> acceptRequest())
-                .show();
+        TechnicianRequestActionDialogHelper.confirmAccept(this, this::acceptRequest);
     }
 
     private void confirmStart() {
-        new AlertDialog.Builder(this)
-                .setTitle("Mulai pengerjaan?")
-                .setMessage("Status request akan berubah menjadi sedang dikerjakan.")
-                .setNegativeButton("Batal", null)
-                .setPositiveButton("Mulai", (dialog, which) -> startRequest())
-                .show();
+        TechnicianRequestActionDialogHelper.confirmStart(this, this::startRequest);
     }
 
     private void showRejectDialog() {
-        EditText input = new EditText(this);
-        input.setHint("Alasan penolakan, opsional");
-        input.setSingleLine(false);
-        input.setMaxLines(4);
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        input.setPadding(dp(16), dp(12), dp(16), dp(12));
-
-        new AlertDialog.Builder(this)
-                .setTitle("Tolak request?")
-                .setMessage("Request akan ditandai sebagai ditolak.")
-                .setView(input)
-                .setNegativeButton("Batal", null)
-                .setPositiveButton("Tolak", (dialog, which) -> {
-                    String reason = input.getText() == null ? null : input.getText().toString().trim();
-
-                    if (reason != null && reason.length() > 1000) {
-                        AppToast.error(this, "Alasan maksimal 1000 karakter.");
-                        return;
-                    }
-
-                    rejectRequest(reason);
-                })
-                .show();
+        TechnicianRequestActionDialogHelper.showRejectDialog(this, this::rejectRequest);
     }
 
     private void showCompleteDialog() {
-        LinearLayout container = new LinearLayout(this);
-        container.setOrientation(LinearLayout.VERTICAL);
-        container.setPadding(dp(4), dp(8), dp(4), 0);
-
-        EditText inputCost = new EditText(this);
-        inputCost.setHint("Biaya akhir, contoh: 150000");
-        inputCost.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        inputCost.setSingleLine(true);
-
-        EditText inputNote = new EditText(this);
-        inputNote.setHint("Catatan teknisi, opsional");
-        inputNote.setSingleLine(false);
-        inputNote.setMaxLines(4);
-        inputNote.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-
-        LinearLayout.LayoutParams noteParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        noteParams.setMargins(0, dp(12), 0, 0);
-        inputNote.setLayoutParams(noteParams);
-
-        container.addView(inputCost);
-        container.addView(inputNote);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Selesaikan pekerjaan?")
-                .setMessage("Masukkan biaya akhir sebelum menyelesaikan request.")
-                .setView(container)
-                .setNegativeButton("Batal", null)
-                .setPositiveButton("Selesaikan", (dialog, which) -> {
-                    BigDecimal finalCost = parseFinalCost(inputCost.getText() == null ? "" : inputCost.getText().toString());
-                    String note = inputNote.getText() == null ? null : inputNote.getText().toString().trim();
-
-                    if (finalCost == null) {
-                        AppToast.error(this, "Biaya akhir wajib diisi dan harus valid.");
-                        return;
-                    }
-
-                    if (note != null && note.length() > 1000) {
-                        AppToast.error(this, "Catatan maksimal 1000 karakter.");
-                        return;
-                    }
-
-                    completeRequest(finalCost, note);
-                })
-                .show();
+        TechnicianRequestActionDialogHelper.showCompleteDialog(this, this::completeRequest);
     }
 
     private void acceptRequest() {
@@ -515,31 +434,6 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
         );
     }
 
-    private BigDecimal parseFinalCost(String value) {
-        if (isBlank(value)) {
-            return null;
-        }
-
-        try {
-            String normalized = value.trim()
-                    .replace("Rp", "")
-                    .replace("rp", "")
-                    .replace(" ", "")
-                    .replace(".", "")
-                    .replace(",", ".");
-
-            BigDecimal result = new BigDecimal(normalized);
-
-            if (result.compareTo(BigDecimal.ZERO) < 0) {
-                return null;
-            }
-
-            return result;
-        } catch (Exception ignored) {
-            return null;
-        }
-    }
-
     private String formatCurrency(BigDecimal value) {
         if (value == null) {
             return "-";
@@ -556,7 +450,7 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
     }
 
     private boolean isBlank(String value) {
-        return TextUtils.isEmpty(value) || value.trim().isEmpty();
+        return TextHelper.isBlank(value);
     }
 
     private GradientDrawable makeRounded(String color, int radiusDp) {
