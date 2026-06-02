@@ -28,6 +28,7 @@ import com.teknisio.mobile.model.response.ServiceRequestResponse;
 import com.teknisio.mobile.network.ApiClient;
 import com.teknisio.mobile.util.BackButtonHelper;
 import com.teknisio.mobile.util.ErrorParser;
+import com.teknisio.mobile.util.InputValidator;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -129,7 +130,7 @@ public class OrderTechnicianActivity extends BaseActivity {
         txtSelectedSummary.setText("Memuat kategori teknisi...");
 
         ApiClient.getApiService(this)
-                .searchTechnicians(categoryId, null, "rating")
+                .searchTechnicians(categoryId, "ONLINE", "rating")
                 .enqueue(new Callback<ApiResponse<List<CustomerTechnicianResponse>>>() {
                     @Override
                     public void onResponse(
@@ -369,7 +370,10 @@ public class OrderTechnicianActivity extends BaseActivity {
                 && selectedTechnician != null
                 && !selectedCategoryIds.isEmpty()
                 && !getInputText(edtIssueDescription).isEmpty()
-                && !getInputText(edtAddress).isEmpty();
+                && getInputText(edtIssueDescription).length() <= 1000
+                && !getInputText(edtAddress).isEmpty()
+                && getInputText(edtAddress).length() <= 500
+                && getInputText(edtAddressDetail).length() <= 500;
     }
 
     private String getInputText(EditText editText) {
@@ -391,19 +395,17 @@ public class OrderTechnicianActivity extends BaseActivity {
             return;
         }
 
-        String issueDescription = edtIssueDescription.getText().toString().trim();
-        String address = edtAddress.getText().toString().trim();
-        String addressDetail = edtAddressDetail.getText().toString().trim();
+        InputValidator.clearErrors(edtIssueDescription, edtAddress, edtAddressDetail);
 
-        if (issueDescription.isEmpty()) {
-            Toast.makeText(this, "Deskripsi kerusakan wajib diisi.", Toast.LENGTH_SHORT).show();
+        if (!InputValidator.requireLength(this, edtIssueDescription, "Deskripsi kerusakan", 1, 1000)
+                || !InputValidator.requireLength(this, edtAddress, "Alamat", 1, 500)
+                || !InputValidator.optionalMax(this, edtAddressDetail, "Detail alamat", 500)) {
             return;
         }
 
-        if (address.isEmpty()) {
-            Toast.makeText(this, "Alamat wajib diisi.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        String issueDescription = InputValidator.value(edtIssueDescription);
+        String address = InputValidator.value(edtAddress);
+        String addressDetail = InputValidator.value(edtAddressDetail);
 
         CreateServiceRequestRequest request = new CreateServiceRequestRequest(
                 selectedTechnician.technicianProfileId,

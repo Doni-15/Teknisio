@@ -83,7 +83,7 @@ public class AuthService {
 
     TeknisiProfile technicianProfile = TeknisiProfile.builder()
       .user(savedUser)
-      .statusKetersediaan(TeknisiStatus.OFFLINE)
+      .statusKetersediaan(TeknisiStatus.ONLINE)
       .deskripsi(TextUtil.trim(request.description()))
       .build();
 
@@ -113,9 +113,18 @@ public class AuthService {
     UUID technicianProfileId = null;
 
     if (savedUser.getRole() == UserRole.TECHNICIAN) {
-      technicianProfileId = teknisiProfileRepository.findByUser_IdUser(savedUser.getIdUser())
-        .map(TeknisiProfile::getIdTeknisiProfile)
+      TeknisiProfile technicianProfile = teknisiProfileRepository
+        .findByUser_IdUser(savedUser.getIdUser())
         .orElse(null);
+
+      if (technicianProfile != null) {
+        if (technicianProfile.getStatusKetersediaan() == TeknisiStatus.OFFLINE) {
+          technicianProfile.setStatusKetersediaan(TeknisiStatus.ONLINE);
+          technicianProfile = teknisiProfileRepository.save(technicianProfile);
+        }
+
+        technicianProfileId = technicianProfile.getIdTeknisiProfile();
+      }
     }
 
     return buildAuthResponse(savedUser, technicianProfileId);

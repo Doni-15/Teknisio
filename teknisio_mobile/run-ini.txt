@@ -1,0 +1,8 @@
+find . -type f ! -name "semua_isi_file_mobile.txt" -exec sh -c '
+for f do
+  if grep -Iq . "$f"; then
+    printf "\n\n===== FILE: %s =====\n\n" "$f"
+    cat "$f"
+  fi
+done
+' sh {} + > semua_isi_file_mobile.txt

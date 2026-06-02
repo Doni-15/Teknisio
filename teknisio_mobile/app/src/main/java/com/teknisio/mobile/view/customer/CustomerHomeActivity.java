@@ -242,7 +242,7 @@ public class CustomerHomeActivity extends BaseActivity {
             }
 
             ApiClient.getApiService(this)
-                    .searchTechnicians(category.deviceCategoryId, null, "rating")
+                    .searchTechnicians(category.deviceCategoryId, "ONLINE", "rating")
                     .enqueue(new Callback<ApiResponse<List<CustomerTechnicianResponse>>>() {
                         @Override
                         public void onResponse(

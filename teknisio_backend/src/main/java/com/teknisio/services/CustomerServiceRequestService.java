@@ -21,6 +21,7 @@ import com.teknisio.model.entities.TeknisiKategoriLayanan;
 import com.teknisio.model.entities.TeknisiProfile;
 import com.teknisio.model.entities.User;
 import com.teknisio.model.enums.RequestStatus;
+import com.teknisio.model.enums.TeknisiStatus;
 import com.teknisio.model.enums.UserRole;
 import com.teknisio.model.enums.UserStatus;
 import com.teknisio.model.entities.RiwayatStatus;
@@ -70,6 +71,7 @@ public class CustomerServiceRequestService {
     List<UUID> deviceCategoryIds = parseDeviceCategoryIds(request.deviceCategoryIds());
     List<KategoriLayanan> selectedCategories = getActiveDeviceCategories(deviceCategoryIds);
 
+    validateTechnicianAvailableForOrder(technicianProfile);
     validateTechnicianSupportsSelectedCategories(technicianProfile, selectedCategories);
 
     PermintaanLayanan serviceRequest = PermintaanLayanan.builder()
@@ -161,12 +163,19 @@ public class CustomerServiceRequestService {
 
     PermintaanLayanan serviceRequest = getOwnedServiceRequest(idPermintaan, customer);
 
-    validateCancellableStatus(serviceRequest.getStatus());
+    RequestStatus previousStatus = serviceRequest.getStatus();
+
+    validateCancellableStatus(previousStatus);
 
     serviceRequest.setAlasanBatal(TextUtil.trim(request.cancelReason()));
     serviceRequest.setStatus(RequestStatus.CANCELLED);
     serviceRequest.setWaktuDibatalkan(OffsetDateTime.now());
     serviceRequest.setDiubahOlehTerakhir(customer);
+
+    if (previousStatus == RequestStatus.ACCEPTED
+      || previousStatus == RequestStatus.ON_PROGRESS) {
+      setTechnicianAvailability(serviceRequest.getTeknisiProfile(), TeknisiStatus.ONLINE);
+    }
 
     PermintaanLayanan savedServiceRequest = permintaanLayananRepository.saveAndFlush(serviceRequest);
 
@@ -201,6 +210,25 @@ public class CustomerServiceRequestService {
     updateTechnicianRating(technicianProfile, request.rating());
 
     return toReviewResponse(savedReview);
+  }
+
+  private void validateTechnicianAvailableForOrder(TeknisiProfile technicianProfile) {
+    if (technicianProfile == null
+      || technicianProfile.getStatusKetersediaan() != TeknisiStatus.ONLINE) {
+      throw new ConflictException("Technician is not available");
+    }
+  }
+
+  private void setTechnicianAvailability(
+    TeknisiProfile technicianProfile,
+    TeknisiStatus status
+  ) {
+    if (technicianProfile == null || status == null) {
+      return;
+    }
+
+    technicianProfile.setStatusKetersediaan(status);
+    teknisiProfileRepository.save(technicianProfile);
   }
 
   private User getCurrentActiveCustomer() {

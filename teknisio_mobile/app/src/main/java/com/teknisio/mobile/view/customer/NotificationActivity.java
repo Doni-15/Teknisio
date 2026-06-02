@@ -11,27 +11,14 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.teknisio.mobile.R;
 import com.teknisio.mobile.base.BaseActivity;
 import com.teknisio.mobile.model.response.NotificationResponse;
-import com.teknisio.mobile.network.ApiClient;
 import com.teknisio.mobile.util.BackButtonHelper;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import okhttp3.ResponseBody;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class NotificationActivity extends BaseActivity {
 
@@ -41,10 +28,7 @@ public class NotificationActivity extends BaseActivity {
     private TextView txtNotificationEmpty;
     private Button btnRetry;
 
-    private final Gson gson = new Gson();
     private final List<NotificationResponse> notifications = new ArrayList<>();
-
-    private boolean loading = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +37,7 @@ public class NotificationActivity extends BaseActivity {
 
         bindViews();
         setupActions();
-        loadNotifications();
+        loadDummyNotifications();
     }
 
     private void bindViews() {
@@ -66,148 +50,50 @@ public class NotificationActivity extends BaseActivity {
 
     private void setupActions() {
         BackButtonHelper.setup(btnBack, this::finish);
-        btnRetry.setOnClickListener(v -> loadNotifications());
+        btnRetry.setOnClickListener(v -> loadDummyNotifications());
     }
 
-    private void loadNotifications() {
-        if (loading) {
-            return;
-        }
+    private void loadDummyNotifications() {
+        notifications.clear();
 
-        loading = true;
-        setLoadingState("Memuat notifikasi...");
+        notifications.add(createDummyNotification(
+                "dummy-order-waiting",
+                "Pesanan menunggu teknisi",
+                "Request servis kamu sudah dibuat dan sedang menunggu respons teknisi.",
+                "Simulasi UI"
+        ));
 
-        ApiClient.getApiService(this)
-                .getNotifications()
-                .enqueue(new Callback<ResponseBody>() {
-                    @Override
-                    public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                        loading = false;
+        notifications.add(createDummyNotification(
+                "dummy-technician-update",
+                "Update dari teknisi",
+                "Teknisi akan menghubungi kamu melalui nomor telepon yang terdaftar.",
+                "Simulasi UI"
+        ));
 
-                        if (response.code() == 404) {
-                            showMessage("Backend notifikasi belum aktif.");
-                            return;
-                        }
+        notifications.add(createDummyNotification(
+                "dummy-feature-info",
+                "Notifikasi real-time segera hadir",
+                "Fitur notifikasi backend akan diaktifkan pada versi berikutnya.",
+                "Roadmap"
+        ));
 
-                        if (response.code() == 401 || response.code() == 403) {
-                            showMessage("Session berakhir. Silakan login kembali.");
-                            return;
-                        }
-
-                        if (!response.isSuccessful() || response.body() == null) {
-                            showMessage("Notifikasi gagal dimuat.");
-                            return;
-                        }
-
-                        try {
-                            String json = response.body().string();
-                            List<NotificationResponse> parsed = parseNotifications(json);
-
-                            notifications.clear();
-                            notifications.addAll(parsed);
-
-                            if (notifications.isEmpty()) {
-                                showMessage("Belum ada notifikasi.");
-                                return;
-                            }
-
-                            renderNotifications();
-                        } catch (IOException | RuntimeException exception) {
-                            showMessage("Format notifikasi belum sesuai.");
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<ResponseBody> call, Throwable t) {
-                        loading = false;
-                        showMessage("Tidak bisa terhubung ke server.");
-                    }
-                });
+        renderNotifications();
     }
 
-    private List<NotificationResponse> parseNotifications(String json) {
-        List<NotificationResponse> result = new ArrayList<>();
-
-        if (isBlank(json)) {
-            return result;
-        }
-
-        JsonElement root = JsonParser.parseString(json);
-        JsonElement data = root;
-
-        if (root.isJsonObject()) {
-            JsonObject object = root.getAsJsonObject();
-
-            if (object.has("success")
-                    && object.get("success").isJsonPrimitive()
-                    && !object.get("success").getAsBoolean()) {
-                return result;
-            }
-
-            if (object.has("data") && !object.get("data").isJsonNull()) {
-                data = object.get("data");
-            }
-        }
-
-        JsonArray array = findNotificationArray(data);
-
-        if (array == null) {
-            return result;
-        }
-
-        for (JsonElement item : array) {
-            if (item != null && item.isJsonObject()) {
-                NotificationResponse notification = gson.fromJson(item, NotificationResponse.class);
-
-                if (notification != null) {
-                    result.add(notification);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private JsonArray findNotificationArray(JsonElement element) {
-        if (element == null || element.isJsonNull()) {
-            return null;
-        }
-
-        if (element.isJsonArray()) {
-            return element.getAsJsonArray();
-        }
-
-        if (!element.isJsonObject()) {
-            return null;
-        }
-
-        JsonObject object = element.getAsJsonObject();
-
-        String[] commonKeys = {
-                "content",
-                "items",
-                "notifications",
-                "results",
-                "records",
-                "list",
-                "data"
-        };
-
-        for (String key : commonKeys) {
-            if (object.has(key) && object.get(key).isJsonArray()) {
-                return object.getAsJsonArray(key);
-            }
-        }
-
-        for (String key : object.keySet()) {
-            JsonElement child = object.get(key);
-
-            if (child != null && child.isJsonArray()) {
-                return child.getAsJsonArray();
-            }
-        }
-
-        return null;
+    private NotificationResponse createDummyNotification(
+            String id,
+            String title,
+            String message,
+            String time
+    ) {
+        NotificationResponse notification = new NotificationResponse();
+        notification.id = id;
+        notification.title = title;
+        notification.message = message;
+        notification.createdAt = time;
+        notification.isRead = false;
+        notification.read = false;
+        return notification;
     }
 
     private void renderNotifications() {
@@ -230,7 +116,7 @@ public class NotificationActivity extends BaseActivity {
                         : notifications.size() + " notifikasi"
         );
 
-        btnRetry.setText("Refresh");
+        btnRetry.setText("Muat ulang dummy");
         btnRetry.setEnabled(true);
     }
 
@@ -320,60 +206,18 @@ public class NotificationActivity extends BaseActivity {
         card.addView(icon);
         card.addView(content);
 
-        card.setOnClickListener(v -> markAsRead(notification));
+        card.setOnClickListener(v -> markAsReadLocal(notification));
 
         return card;
     }
 
-    private void markAsRead(NotificationResponse notification) {
+    private void markAsReadLocal(NotificationResponse notification) {
         if (notification == null || !notification.isUnread()) {
             return;
         }
 
-        String notificationId = notification.getStableId();
-
-        if (isBlank(notificationId)) {
-            notification.markReadLocal();
-            renderNotifications();
-            return;
-        }
-
-        ApiClient.getApiService(this)
-                .markNotificationRead(notificationId)
-                .enqueue(new Callback<ResponseBody>() {
-                    @Override
-                    public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                        notification.markReadLocal();
-                        renderNotifications();
-                    }
-
-                    @Override
-                    public void onFailure(Call<ResponseBody> call, Throwable t) {
-                        Toast.makeText(
-                                NotificationActivity.this,
-                                "Gagal menandai notifikasi dibaca.",
-                                Toast.LENGTH_SHORT
-                        ).show();
-                    }
-                });
-    }
-
-    private void setLoadingState(String message) {
-        layoutNotifications.removeAllViews();
-        txtNotificationEmpty.setVisibility(android.view.View.VISIBLE);
-        txtNotificationEmpty.setText(message);
-        txtNotificationSubtitle.setText(message);
-        btnRetry.setText("Memuat...");
-        btnRetry.setEnabled(false);
-    }
-
-    private void showMessage(String message) {
-        layoutNotifications.removeAllViews();
-        txtNotificationEmpty.setVisibility(android.view.View.VISIBLE);
-        txtNotificationEmpty.setText(message);
-        txtNotificationSubtitle.setText(message);
-        btnRetry.setText("Refresh");
-        btnRetry.setEnabled(true);
+        notification.markReadLocal();
+        renderNotifications();
     }
 
     private GradientDrawable makeStrokeRounded(String fillColor, String strokeColor, int radiusDp, int strokeWidthDp) {

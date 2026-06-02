@@ -21,7 +21,6 @@ import com.teknisio.mobile.model.response.StatusHistoryResponse;
 import java.util.List;
 import java.util.Map;
 
-import okhttp3.ResponseBody;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -149,10 +148,4 @@ public interface ApiService {
 
     @PUT("api/users/me")
     Call<ApiResponse<AuthUserResponse>> updateProfile(@Body Map<String, String> request);
-
-    @GET("api/notifications")
-    Call<ResponseBody> getNotifications();
-
-    @PATCH("api/notifications/{notificationId}/read")
-    Call<ResponseBody> markNotificationRead(@Path("notificationId") String notificationId);
 }

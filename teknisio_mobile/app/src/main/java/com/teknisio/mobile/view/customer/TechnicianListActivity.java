@@ -24,6 +24,7 @@ import com.teknisio.mobile.model.response.DeviceCategoryResponse;
 import com.teknisio.mobile.network.ApiClient;
 import com.teknisio.mobile.util.BackButtonHelper;
 import com.teknisio.mobile.util.ErrorParser;
+import com.teknisio.mobile.util.TechnicianAvailabilityHelper;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -140,7 +141,7 @@ public class TechnicianListActivity extends BaseActivity {
         setLoading(true);
 
         ApiClient.getApiService(this)
-                .searchTechnicians(categoryId, null, "rating")
+                .searchTechnicians(categoryId, "ONLINE", "rating")
                 .enqueue(new Callback<ApiResponse<List<CustomerTechnicianResponse>>>() {
                     @Override
                     public void onResponse(
@@ -228,7 +229,7 @@ public class TechnicianListActivity extends BaseActivity {
                             pendingAllTechnicianRequests++;
 
                             ApiClient.getApiService(TechnicianListActivity.this)
-                                    .searchTechnicians(category.deviceCategoryId, null, "rating")
+                                    .searchTechnicians(category.deviceCategoryId, "ONLINE", "rating")
                                     .enqueue(new Callback<ApiResponse<List<CustomerTechnicianResponse>>>() {
                                         @Override
                                         public void onResponse(
@@ -493,27 +494,7 @@ public class TechnicianListActivity extends BaseActivity {
     }
 
     private String getStatusText(String status) {
-        if (isBlank(status)) {
-            return "Tersedia";
-        }
-
-        String normalized = status.trim().replace("_", " ").toLowerCase();
-
-        if (normalized.contains("busy")) {
-            return "Sibuk";
-        }
-
-        if (normalized.contains("leave") || normalized.contains("cuti")) {
-            return "Cuti";
-        }
-
-        if (normalized.contains("online")
-                || normalized.contains("available")
-                || normalized.contains("offline")) {
-            return "Tersedia";
-        }
-
-        return status.trim();
+        return TechnicianAvailabilityHelper.toDisplayText(status);
     }
 
     private String formatRating(BigDecimal rating) {

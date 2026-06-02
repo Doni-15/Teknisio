@@ -254,6 +254,20 @@ public class ServiceRequestDetailActivity extends BaseActivity {
 
                 if (reason.isEmpty()) {
                     if (errorText != null) {
+                        errorText.setText("Alasan pembatalan wajib diisi.");
+                        errorText.setVisibility(View.VISIBLE);
+                    }
+
+                    if (input != null) {
+                        input.requestFocus();
+                    }
+
+                    return;
+                }
+
+                if (reason.length() > 1000) {
+                    if (errorText != null) {
+                        errorText.setText("Alasan pembatalan maksimal 1000 karakter.");
                         errorText.setVisibility(View.VISIBLE);
                     }
 

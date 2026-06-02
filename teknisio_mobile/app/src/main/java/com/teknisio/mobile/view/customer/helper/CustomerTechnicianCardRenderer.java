@@ -13,6 +13,7 @@ import com.teknisio.mobile.base.BaseActivity;
 import com.teknisio.mobile.model.response.CustomerTechnicianResponse;
 import com.teknisio.mobile.model.response.DeviceCategoryResponse;
 import com.teknisio.mobile.util.TextHelper;
+import com.teknisio.mobile.util.TechnicianAvailabilityHelper;
 import com.teknisio.mobile.util.ViewHelper;
 
 import java.math.BigDecimal;
@@ -123,9 +124,16 @@ public final class CustomerTechnicianCardRenderer {
         statusParams.setMargins(dp(activity, 8), 0, 0, 0);
         statusChip.setLayoutParams(statusParams);
         statusChip.setPadding(dp(activity, 10), dp(activity, 5), dp(activity, 10), dp(activity, 5));
-        statusChip.setBackground(makeStrokeRounded("#EDF9F0", "#CFE9D6", 12, 1));
-        statusChip.setText("Tersedia");
-        statusChip.setTextColor(Color.parseColor("#2E7D32"));
+        String status = technician == null ? null : technician.availabilityStatus;
+        boolean online = TechnicianAvailabilityHelper.isOnline(status);
+        statusChip.setBackground(makeStrokeRounded(
+                online ? "#EDF9F0" : "#F3F7F9",
+                online ? "#CFE9D6" : "#DCE6EB",
+                12,
+                1
+        ));
+        statusChip.setText(TechnicianAvailabilityHelper.toDisplayText(status));
+        statusChip.setTextColor(Color.parseColor(online ? "#2E7D32" : "#6B7680"));
         statusChip.setTextSize(12);
 
         statsRow.addView(jobsChip);

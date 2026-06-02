@@ -76,19 +76,31 @@ public final class TechnicianRequestActionDialogHelper {
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         input.setPadding(dp(activity, 16), dp(activity, 12), dp(activity, 16), dp(activity, 12));
 
-        new AlertDialog.Builder(activity)
+        AlertDialog dialog = new AlertDialog.Builder(activity)
                 .setTitle("Tolak Request")
                 .setMessage("Berikan alasan penolakan agar customer memahami keputusanmu.")
                 .setView(input)
                 .setNegativeButton("Batal", null)
-                .setPositiveButton("Tolak", (dialog, which) -> {
-                    String reason = input.getText() == null ? "" : input.getText().toString().trim();
+                .setPositiveButton("Tolak", null)
+                .create();
 
-                    if (callback != null) {
-                        callback.onReject(TextHelper.isBlank(reason) ? null : reason);
-                    }
-                })
-                .show();
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String reason = input.getText() == null ? "" : input.getText().toString().trim();
+
+            if (!TextHelper.isBlank(reason) && reason.length() > 1000) {
+                AppToast.error(activity, "Alasan penolakan maksimal 1000 karakter.");
+                input.requestFocus();
+                return;
+            }
+
+            dialog.dismiss();
+
+            if (callback != null) {
+                callback.onReject(TextHelper.isBlank(reason) ? null : reason);
+            }
+        }));
+
+        dialog.show();
     }
 
     public static void showCompleteDialog(BaseActivity activity, CompleteCallback callback) {
@@ -101,9 +113,9 @@ public final class TechnicianRequestActionDialogHelper {
         container.setPadding(dp(activity, 4), 0, dp(activity, 4), 0);
 
         final EditText edtFinalCost = new EditText(activity);
-        edtFinalCost.setHint("Biaya akhir");
+        edtFinalCost.setHint("Biaya akhir dalam Rupiah, contoh: 150000");
         edtFinalCost.setSingleLine(true);
-        edtFinalCost.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        edtFinalCost.setInputType(InputType.TYPE_CLASS_NUMBER);
         edtFinalCost.setPadding(dp(activity, 16), dp(activity, 12), dp(activity, 16), dp(activity, 12));
 
         final EditText edtNote = new EditText(activity);
@@ -166,10 +178,11 @@ public final class TechnicianRequestActionDialogHelper {
         }
 
         try {
-            String normalized = value
-                    .trim()
-                    .replace(".", "")
-                    .replace(",", ".");
+            String normalized = value.trim().replaceAll("[^0-9]", "");
+
+            if (TextHelper.isBlank(normalized)) {
+                return null;
+            }
 
             BigDecimal parsed = new BigDecimal(normalized);
 

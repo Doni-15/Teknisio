@@ -25,6 +25,7 @@ import com.teknisio.mobile.controller.AuthController;
 import com.teknisio.mobile.local.TokenManager;
 import com.teknisio.mobile.model.response.AuthResponse;
 import com.teknisio.mobile.network.ApiClient;
+import com.teknisio.mobile.util.InputValidator;
 
 public class RegisterCustomerActivity extends BaseActivity {
 
@@ -110,6 +111,10 @@ public class RegisterCustomerActivity extends BaseActivity {
     }
 
     private void doRegister() {
+        if (!validateRegistrationForm()) {
+            return;
+        }
+
         setLoading(true);
 
         if (technicianMode) {
@@ -119,13 +124,32 @@ public class RegisterCustomerActivity extends BaseActivity {
         }
     }
 
+    private boolean validateRegistrationForm() {
+        InputValidator.clearErrors(
+                edtName,
+                edtEmail,
+                edtPhone,
+                edtPassword,
+                edtAddress,
+                edtDescription
+        );
+
+        return InputValidator.requireLength(this, edtName, "Nama", 1, 100)
+                && InputValidator.requireEmail(this, edtEmail)
+                && InputValidator.requirePhone(this, edtPhone)
+                && InputValidator.requirePassword(this, edtPassword)
+                && InputValidator.requireNonBlank(this, edtAddress, "Alamat wajib diisi.")
+                && (!technicianMode
+                || InputValidator.optionalMax(this, edtDescription, "Deskripsi teknisi", 1000));
+    }
+
     private void registerCustomer() {
         authController.registerCustomer(
-                edtName.getText().toString(),
-                edtEmail.getText().toString(),
-                edtPhone.getText().toString(),
-                edtPassword.getText().toString(),
-                edtAddress.getText().toString(),
+                InputValidator.value(edtName),
+                InputValidator.value(edtEmail),
+                InputValidator.value(edtPhone),
+                InputValidator.raw(edtPassword),
+                InputValidator.value(edtAddress),
                 new AuthController.AuthCallback() {
                     @Override
                     public void onSuccess(AuthResponse authResponse) {
@@ -154,12 +178,12 @@ public class RegisterCustomerActivity extends BaseActivity {
 
     private void registerTechnician() {
         authController.registerTechnician(
-                edtName.getText().toString(),
-                edtEmail.getText().toString(),
-                edtPhone.getText().toString(),
-                edtPassword.getText().toString(),
-                edtAddress.getText().toString(),
-                edtDescription.getText().toString(),
+                InputValidator.value(edtName),
+                InputValidator.value(edtEmail),
+                InputValidator.value(edtPhone),
+                InputValidator.raw(edtPassword),
+                InputValidator.value(edtAddress),
+                InputValidator.value(edtDescription),
                 new AuthController.AuthCallback() {
                     @Override
                     public void onSuccess(AuthResponse authResponse) {

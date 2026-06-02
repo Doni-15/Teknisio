@@ -22,6 +22,7 @@ import com.teknisio.mobile.R;
 import com.teknisio.mobile.controller.AuthController;
 import com.teknisio.mobile.local.TokenManager;
 import com.teknisio.mobile.model.response.AuthResponse;
+import com.teknisio.mobile.util.InputValidator;
 import com.teknisio.mobile.view.customer.CustomerHomeActivity;
 import com.teknisio.mobile.view.technician.TechnicianHomeActivity;
 
@@ -155,16 +156,23 @@ public class LoginActivity extends BaseActivity {
     }
 
     private void doLogin() {
+        InputValidator.clearErrors(edtEmail, edtPassword);
+
+        if (!InputValidator.requireEmail(this, edtEmail)
+                || !InputValidator.requireNonBlank(this, edtPassword, "Password wajib diisi.")) {
+            return;
+        }
+
         setLoading(true);
 
-        String email = edtEmail.getText().toString();
-        String password = edtPassword.getText().toString();
+        String email = InputValidator.value(edtEmail);
+        String password = InputValidator.raw(edtPassword);
 
         authController.login(email, password, new AuthController.AuthCallback() {
             @Override
             public void onSuccess(AuthResponse authResponse) {
                 setLoading(false);
-Toast.makeText(LoginActivity.this, "Login berhasil.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Login berhasil.", Toast.LENGTH_SHORT).show();
                 goToCustomerHome();
             }
 

@@ -163,6 +163,12 @@ public final class ReviewDialogHelper {
 
             String comment = edtComment.getText() == null ? "" : edtComment.getText().toString().trim();
 
+            if (comment.length() > 1000) {
+                showInputError(errorText, "Komentar maksimal 1000 karakter.");
+                edtComment.requestFocus();
+                return;
+            }
+
             errorText.setVisibility(View.GONE);
             btnSubmit.setEnabled(false);
 

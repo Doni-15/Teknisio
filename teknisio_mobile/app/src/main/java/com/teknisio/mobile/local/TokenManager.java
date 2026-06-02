@@ -11,6 +11,7 @@ public class TokenManager {
   private static final String KEY_ACCESS_TOKEN = "access_token";
   private static final String KEY_TOKEN_TYPE = "token_type";
   private static final String KEY_EXPIRES_IN_MS = "expires_in_ms";
+  private static final String KEY_EXPIRES_AT_MS = "expires_at_ms";
   private static final String KEY_USER_ID = "user_id";
   private static final String KEY_TECHNICIAN_PROFILE_ID = "technician_profile_id";
   private static final String KEY_NAME = "name";
@@ -33,9 +34,13 @@ public class TokenManager {
 
       AuthUserResponse user = authResponse.user;
       SharedPreferences.Editor editor = prefs.edit();
+      long expiresInMs = authResponse.expiresInMs == null ? 0L : authResponse.expiresInMs;
+      long expiresAtMs = expiresInMs <= 0L ? 0L : System.currentTimeMillis() + expiresInMs;
+
       editor.putString(KEY_ACCESS_TOKEN, authResponse.accessToken);
       editor.putString(KEY_TOKEN_TYPE, authResponse.tokenType);
-      editor.putLong(KEY_EXPIRES_IN_MS, authResponse.expiresInMs == null ? 0L : authResponse.expiresInMs);
+      editor.putLong(KEY_EXPIRES_IN_MS, expiresInMs);
+      editor.putLong(KEY_EXPIRES_AT_MS, expiresAtMs);
 
       if (user != null) {
         editor.putString(KEY_USER_ID, user.userId);
@@ -113,7 +118,23 @@ public class TokenManager {
 
     public boolean isLoggedIn() {
       String token = getAccessToken();
-      return token != null && !token.trim().isEmpty();
+
+      if (token == null || token.trim().isEmpty()) {
+          return false;
+      }
+
+      long expiresAtMs = prefs.getLong(KEY_EXPIRES_AT_MS, 0L);
+
+      if (expiresAtMs <= 0L) {
+          return true;
+      }
+
+      if (System.currentTimeMillis() >= expiresAtMs) {
+          clearSession();
+          return false;
+      }
+
+      return true;
     }
 
     public boolean isCustomer() {

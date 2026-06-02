@@ -23,7 +23,7 @@ public final class ApiClient {
         if (apiService == null) {
             HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
             loggingInterceptor.setLevel(isDebugBuild(context)
-                    ? HttpLoggingInterceptor.Level.BODY
+                    ? HttpLoggingInterceptor.Level.BASIC
                     : HttpLoggingInterceptor.Level.NONE);
 
             OkHttpClient client = new OkHttpClient.Builder()

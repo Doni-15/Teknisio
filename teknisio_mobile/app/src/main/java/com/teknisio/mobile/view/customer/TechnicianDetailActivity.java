@@ -22,6 +22,7 @@ import com.teknisio.mobile.model.response.DeviceCategoryResponse;
 import com.teknisio.mobile.network.ApiClient;
 import com.teknisio.mobile.util.BackButtonHelper;
 import com.teknisio.mobile.util.ErrorParser;
+import com.teknisio.mobile.util.TechnicianAvailabilityHelper;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -163,13 +164,20 @@ public class TechnicianDetailActivity extends BaseActivity {
 
         renderSupportedCategories(technician.supportedDeviceCategories);
 
-        boolean canOrder = hasSelectableCategory();
+        boolean canOrder = hasSelectableCategory()
+                && TechnicianAvailabilityHelper.isOnline(technician.availabilityStatus);
         setOrderEnabled(canOrder);
 
-        txtDetailMessage.setText(canOrder
-                ? "Pilih Pesan Teknisi untuk melanjutkan pemesanan."
-                : "Teknisi ini belum memiliki kategori layanan aktif."
-        );
+        if (!TechnicianAvailabilityHelper.isOnline(technician.availabilityStatus)) {
+            txtDetailMessage.setText("Teknisi sedang "
+                    + TechnicianAvailabilityHelper.toDisplayText(technician.availabilityStatus).toLowerCase()
+                    + ". Pemesanan hanya dapat dibuat untuk teknisi online.");
+        } else {
+            txtDetailMessage.setText(canOrder
+                    ? "Pilih Pesan Teknisi untuk melanjutkan pemesanan."
+                    : "Teknisi ini belum memiliki kategori layanan aktif."
+            );
+        }
     }
 
     private void renderSupportedCategories(List<DeviceCategoryResponse> categories) {
@@ -227,6 +235,12 @@ public class TechnicianDetailActivity extends BaseActivity {
     }
 
     private void openOrderTechnician() {
+        if (technicianDetail == null
+                || !TechnicianAvailabilityHelper.isOnline(technicianDetail.availabilityStatus)) {
+            Toast.makeText(this, "Teknisi belum online.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (!hasSelectableCategory()) {
             Toast.makeText(this, "Kategori layanan teknisi tidak tersedia.", Toast.LENGTH_SHORT).show();
             return;
@@ -289,27 +303,7 @@ public class TechnicianDetailActivity extends BaseActivity {
     }
 
     private String getStatusText(String status) {
-        if (isBlank(status)) {
-            return "Tersedia";
-        }
-
-        String normalized = status.trim().replace("_", " ").toLowerCase();
-
-        if (normalized.contains("busy")) {
-            return "Sibuk";
-        }
-
-        if (normalized.contains("leave") || normalized.contains("cuti")) {
-            return "Cuti";
-        }
-
-        if (normalized.contains("online")
-                || normalized.contains("available")
-                || normalized.contains("offline")) {
-            return "Tersedia";
-        }
-
-        return status.trim();
+        return TechnicianAvailabilityHelper.toDisplayText(status);
     }
 
     private String formatRating(BigDecimal rating) {

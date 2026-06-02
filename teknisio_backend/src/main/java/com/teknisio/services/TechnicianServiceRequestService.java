@@ -15,6 +15,7 @@ import com.teknisio.model.entities.PermintaanLayananKategori;
 import com.teknisio.model.entities.TeknisiProfile;
 import com.teknisio.model.entities.User;
 import com.teknisio.model.enums.RequestStatus;
+import com.teknisio.model.enums.TeknisiStatus;
 import com.teknisio.model.enums.UserRole;
 import com.teknisio.model.enums.UserStatus;
 import com.teknisio.repositories.PermintaanLayananKategoriRepository;
@@ -124,6 +125,7 @@ public class TechnicianServiceRequestService {
 
     serviceRequest.setStatus(RequestStatus.ACCEPTED);
     serviceRequest.setDiubahOlehTerakhir(technicianProfile.getUser());
+    setTechnicianAvailability(technicianProfile, TeknisiStatus.BUSY);
 
     PermintaanLayanan savedServiceRequest =
       permintaanLayananRepository.saveAndFlush(serviceRequest);
@@ -154,6 +156,7 @@ public class TechnicianServiceRequestService {
     serviceRequest.setAlasanTolak(rejectReason);
     serviceRequest.setStatus(RequestStatus.REJECTED);
     serviceRequest.setDiubahOlehTerakhir(technicianProfile.getUser());
+    setTechnicianAvailability(technicianProfile, TeknisiStatus.ONLINE);
 
     PermintaanLayanan savedServiceRequest =
       permintaanLayananRepository.saveAndFlush(serviceRequest);
@@ -176,6 +179,7 @@ public class TechnicianServiceRequestService {
 
     serviceRequest.setStatus(RequestStatus.ON_PROGRESS);
     serviceRequest.setDiubahOlehTerakhir(technicianProfile.getUser());
+    setTechnicianAvailability(technicianProfile, TeknisiStatus.BUSY);
 
     PermintaanLayanan savedServiceRequest =
       permintaanLayananRepository.saveAndFlush(serviceRequest);
@@ -203,6 +207,7 @@ public class TechnicianServiceRequestService {
     serviceRequest.setCatatanTeknisi(TextUtil.trim(request.technicianNote()));
     serviceRequest.setStatus(RequestStatus.COMPLETED);
     serviceRequest.setDiubahOlehTerakhir(technicianProfile.getUser());
+    setTechnicianAvailability(technicianProfile, TeknisiStatus.ONLINE);
 
     PermintaanLayanan savedServiceRequest =
       permintaanLayananRepository.saveAndFlush(serviceRequest);
@@ -210,6 +215,18 @@ public class TechnicianServiceRequestService {
     entityManager.refresh(savedServiceRequest);
 
     return toResponse(savedServiceRequest);
+  }
+
+  private void setTechnicianAvailability(
+    TeknisiProfile technicianProfile,
+    TeknisiStatus status
+  ) {
+    if (technicianProfile == null || status == null) {
+      return;
+    }
+
+    technicianProfile.setStatusKetersediaan(status);
+    teknisiProfileRepository.save(technicianProfile);
   }
 
   private TeknisiProfile getCurrentActiveTechnicianProfile() {
