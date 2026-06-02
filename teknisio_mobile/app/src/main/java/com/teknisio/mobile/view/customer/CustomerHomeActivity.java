@@ -173,11 +173,6 @@ public class CustomerHomeActivity extends BaseActivity {
             Intent intent = new Intent(CustomerHomeActivity.this, AccountActivity.class);
             startActivity(intent);
         });
-
-        navAccount.setOnLongClickListener(v -> {
-            logout();
-            return true;
-        });
     }
 
     private void loadDeviceCategories() {

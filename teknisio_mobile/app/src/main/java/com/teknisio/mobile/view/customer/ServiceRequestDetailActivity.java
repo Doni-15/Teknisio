@@ -29,6 +29,8 @@ import com.teknisio.mobile.util.AppToast;
 import com.teknisio.mobile.util.BackButtonHelper;
 import com.teknisio.mobile.util.ErrorParser;
 import com.teknisio.mobile.util.OrderStatusHelper;
+import com.teknisio.mobile.util.ReviewStateStore;
+import com.teknisio.mobile.util.StatusHistoryRenderer;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -159,10 +161,10 @@ public class ServiceRequestDetailActivity extends BaseActivity {
 
         if (!isBlank(order.cancelReason)) {
             txtCancelReason.setVisibility(View.VISIBLE);
-            txtCancelReason.setText("Cancel reason:\n" + order.cancelReason.trim());
+            txtCancelReason.setText("Alasan pembatalan:\n" + order.cancelReason.trim());
         } else if (!isBlank(order.rejectReason)) {
             txtCancelReason.setVisibility(View.VISIBLE);
-            txtCancelReason.setText("Reject reason:\n" + order.rejectReason.trim());
+            txtCancelReason.setText("Alasan penolakan:\n" + order.rejectReason.trim());
         } else {
             txtCancelReason.setVisibility(View.GONE);
             txtCancelReason.setText("");
@@ -176,7 +178,9 @@ public class ServiceRequestDetailActivity extends BaseActivity {
             btnCancelOrder.setVisibility(View.GONE);
         }
 
-        // Show review button only for COMPLETED orders
+        hasReview = ReviewStateStore.isReviewed(this, serviceRequestId);
+
+        // Show review button only for COMPLETED orders that have not been reviewed from this device.
         if ("COMPLETED".equals(OrderStatusHelper.normalize(order.status)) && !hasReview) {
             btnWriteReview.setVisibility(View.VISIBLE);
         } else {
@@ -201,92 +205,12 @@ public class ServiceRequestDetailActivity extends BaseActivity {
                     ) {
                         if (!response.isSuccessful() || response.body() == null
                                 || !response.body().success || response.body().data == null) return;
-                        renderStatusHistory(response.body().data);
+                        StatusHistoryRenderer.render(ServiceRequestDetailActivity.this, layoutStatusHistory, txtStatusHistoryLabel, response.body().data);
                     }
 
                     @Override
                     public void onFailure(Call<ApiResponse<List<StatusHistoryResponse>>> call, Throwable t) {}
                 });
-    }
-
-    private void renderStatusHistory(List<StatusHistoryResponse> historyList) {
-        if (layoutStatusHistory == null) return;
-        layoutStatusHistory.removeAllViews();
-        if (historyList == null || historyList.isEmpty()) {
-            txtStatusHistoryLabel.setVisibility(View.GONE);
-            layoutStatusHistory.setVisibility(View.GONE);
-            return;
-        }
-        txtStatusHistoryLabel.setVisibility(View.VISIBLE);
-        layoutStatusHistory.setVisibility(View.VISIBLE);
-        for (StatusHistoryResponse item : historyList) {
-            layoutStatusHistory.addView(createHistoryRow(item));
-        }
-    }
-
-    private View createHistoryRow(StatusHistoryResponse item) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setPadding(0, dp(6), 0, dp(6));
-
-        // Dot/indicator
-        View dot = new View(this);
-        LinearLayout.LayoutParams dotParams = new LinearLayout.LayoutParams(dp(10), dp(10));
-        dotParams.setMargins(0, dp(6), dp(12), 0);
-        dot.setLayoutParams(dotParams);
-        GradientDrawable dotDrawable = new GradientDrawable();
-        dotDrawable.setShape(GradientDrawable.OVAL);
-        dotDrawable.setColor(Color.parseColor(OrderStatusHelper.getStatusColor(item.newStatus)));
-        dot.setBackground(dotDrawable);
-
-        // Text container
-        LinearLayout textCol = new LinearLayout(this);
-        textCol.setOrientation(LinearLayout.VERTICAL);
-        textCol.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-
-        TextView txtStatus = new TextView(this);
-        txtStatus.setText(OrderStatusHelper.getDisplayStatus(item.newStatus));
-        txtStatus.setTextColor(Color.parseColor("#1F2329"));
-        txtStatus.setTextSize(14);
-        txtStatus.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-
-        TextView txtTime = new TextView(this);
-        txtTime.setText(formatHistoryTime(item.changedAt));
-        txtTime.setTextColor(Color.parseColor("#6B7680"));
-        txtTime.setTextSize(12);
-
-        if (item.note != null && !item.note.trim().isEmpty()) {
-            TextView txtNote = new TextView(this);
-            txtNote.setText(item.note.trim());
-            txtNote.setTextColor(Color.parseColor("#5F6B73"));
-            txtNote.setTextSize(13);
-            LinearLayout.LayoutParams noteParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            noteParams.setMargins(0, dp(2), 0, 0);
-            txtNote.setLayoutParams(noteParams);
-            textCol.addView(txtStatus);
-            textCol.addView(txtTime);
-            textCol.addView(txtNote);
-        } else {
-            textCol.addView(txtStatus);
-            textCol.addView(txtTime);
-        }
-
-        row.addView(dot);
-        row.addView(textCol);
-        return row;
-    }
-
-    private String formatHistoryTime(String isoTime) {
-        if (isoTime == null || isoTime.trim().isEmpty()) return "-";
-        try {
-            java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse(isoTime);
-            java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter
-                    .ofPattern("dd MMM yyyy, HH:mm", new java.util.Locale("id", "ID"));
-            return odt.format(fmt);
-        } catch (Exception e) {
-            return isoTime;
-        }
     }
 
     // -------------------------------------------------------------------------
@@ -399,7 +323,7 @@ public class ServiceRequestDetailActivity extends BaseActivity {
             String comment = edtComment.getText() == null ? null : edtComment.getText().toString().trim();
             errorText.setVisibility(View.GONE);
             btnSubmit.setEnabled(false);
-            submitReview(ratingVal, (comment == null || comment.isEmpty()) ? null : comment, reviewDialog);
+            submitReview(ratingVal, (comment == null || comment.isEmpty()) ? null : comment, reviewDialog, btnSubmit);
         });
 
         btnRow.addView(btnCancel);
@@ -427,7 +351,7 @@ public class ServiceRequestDetailActivity extends BaseActivity {
         }
     }
 
-    private void submitReview(int rating, String comment, Dialog dialog) {
+    private void submitReview(int rating, String comment, Dialog dialog, Button btnSubmit) {
         ApiClient.getApiService(this)
                 .createReview(serviceRequestId, new CreateReviewRequest(rating, comment))
                 .enqueue(new Callback<ApiResponse<ReviewResponse>>() {
@@ -437,17 +361,47 @@ public class ServiceRequestDetailActivity extends BaseActivity {
                             Response<ApiResponse<ReviewResponse>> response
                     ) {
                         if (!response.isSuccessful()) {
-                            AppToast.error(ServiceRequestDetailActivity.this,
-                                    ErrorParser.parseError(response, "Gagal mengirim ulasan."));
+                            String errorMessage = ErrorParser.parseError(response, "Gagal mengirim ulasan.");
+
+                            if (isDuplicateReviewMessage(errorMessage)) {
+                                ReviewStateStore.markReviewed(ServiceRequestDetailActivity.this, serviceRequestId);
+                                hasReview = true;
+                                btnWriteReview.setVisibility(View.GONE);
+
+                                if (dialog != null && dialog.isShowing()) {
+                                    dialog.dismiss();
+                                }
+
+                                AppToast.warning(ServiceRequestDetailActivity.this, "Order ini sudah pernah diulas.");
+                                return;
+                            }
+
+                            if (btnSubmit != null) {
+                                btnSubmit.setEnabled(true);
+                            }
+
+                            AppToast.error(ServiceRequestDetailActivity.this, errorMessage);
                             return;
                         }
+
                         ApiResponse<ReviewResponse> body = response.body();
+
                         if (body == null || !body.success) {
-                            AppToast.error(ServiceRequestDetailActivity.this,
-                                    ErrorParser.getBestMessage(body, "Gagal mengirim ulasan."));
+                            String errorMessage = ErrorParser.getBestMessage(body, "Gagal mengirim ulasan.");
+
+                            if (btnSubmit != null) {
+                                btnSubmit.setEnabled(true);
+                            }
+
+                            AppToast.error(ServiceRequestDetailActivity.this, errorMessage);
                             return;
                         }
-                        if (dialog != null && dialog.isShowing()) dialog.dismiss();
+
+                        if (dialog != null && dialog.isShowing()) {
+                            dialog.dismiss();
+                        }
+
+                        ReviewStateStore.markReviewed(ServiceRequestDetailActivity.this, serviceRequestId);
                         hasReview = true;
                         btnWriteReview.setVisibility(View.GONE);
                         AppToast.success(ServiceRequestDetailActivity.this, "Ulasan berhasil dikirim!");
@@ -455,9 +409,27 @@ public class ServiceRequestDetailActivity extends BaseActivity {
 
                     @Override
                     public void onFailure(Call<ApiResponse<ReviewResponse>> call, Throwable t) {
+                        if (btnSubmit != null) {
+                            btnSubmit.setEnabled(true);
+                        }
+
                         AppToast.error(ServiceRequestDetailActivity.this, "Tidak bisa terhubung ke server.");
                     }
                 });
+    }
+
+    private boolean isDuplicateReviewMessage(String message) {
+        if (isBlank(message)) {
+            return false;
+        }
+
+        String normalized = message.toLowerCase();
+
+        return normalized.contains("already")
+                || normalized.contains("duplicate")
+                || normalized.contains("pernah")
+                || normalized.contains("sudah")
+                || normalized.contains("review");
     }
 
     // -------------------------------------------------------------------------
@@ -579,6 +551,7 @@ public class ServiceRequestDetailActivity extends BaseActivity {
                         );
 
                         renderOrder(currentOrder);
+                        loadStatusHistory();
                     }
 
                     @Override

@@ -25,6 +25,7 @@ import com.teknisio.mobile.util.BackButtonHelper;
 import com.teknisio.mobile.util.ErrorParser;
 import com.teknisio.mobile.model.response.StatusHistoryResponse;
 import com.teknisio.mobile.util.OrderStatusHelper;
+import com.teknisio.mobile.util.StatusHistoryRenderer;
 import com.teknisio.mobile.util.TextHelper;
 import com.teknisio.mobile.util.ViewHelper;
 
@@ -433,6 +434,7 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
                 setResult(RESULT_OK);
                 AppToast.success(TechnicianRequestDetailActivity.this, successMessage);
                 renderDetail(body.data);
+                loadStatusHistory();
             }
 
             @Override
@@ -460,90 +462,12 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
                     ) {
                         if (!response.isSuccessful() || response.body() == null
                                 || !response.body().success || response.body().data == null) return;
-                        renderStatusHistory(response.body().data);
+                        StatusHistoryRenderer.render(TechnicianRequestDetailActivity.this, layoutStatusHistory, txtStatusHistoryLabel, response.body().data);
                     }
 
                     @Override
                     public void onFailure(Call<ApiResponse<List<StatusHistoryResponse>>> call, Throwable t) {}
                 });
-    }
-
-    private void renderStatusHistory(List<StatusHistoryResponse> historyList) {
-        if (layoutStatusHistory == null) return;
-        layoutStatusHistory.removeAllViews();
-        if (historyList == null || historyList.isEmpty()) {
-            txtStatusHistoryLabel.setVisibility(View.GONE);
-            layoutStatusHistory.setVisibility(View.GONE);
-            return;
-        }
-        txtStatusHistoryLabel.setVisibility(View.VISIBLE);
-        layoutStatusHistory.setVisibility(View.VISIBLE);
-        for (StatusHistoryResponse item : historyList) {
-            layoutStatusHistory.addView(createHistoryRow(item));
-        }
-    }
-
-    private View createHistoryRow(StatusHistoryResponse item) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setPadding(0, dp(6), 0, dp(6));
-
-        android.view.View dot = new android.view.View(this);
-        LinearLayout.LayoutParams dotParams = new LinearLayout.LayoutParams(dp(10), dp(10));
-        dotParams.setMargins(0, dp(6), dp(12), 0);
-        dot.setLayoutParams(dotParams);
-        android.graphics.drawable.GradientDrawable dotDrawable = new android.graphics.drawable.GradientDrawable();
-        dotDrawable.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-        dotDrawable.setColor(android.graphics.Color.parseColor(OrderStatusHelper.getStatusColor(item.newStatus)));
-        dot.setBackground(dotDrawable);
-
-        LinearLayout textCol = new LinearLayout(this);
-        textCol.setOrientation(LinearLayout.VERTICAL);
-        textCol.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-
-        TextView txtStatus = new TextView(this);
-        txtStatus.setText(OrderStatusHelper.getDisplayStatus(item.newStatus));
-        txtStatus.setTextColor(android.graphics.Color.parseColor("#1F2329"));
-        txtStatus.setTextSize(14);
-        txtStatus.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-
-        TextView txtTime = new TextView(this);
-        txtTime.setText(formatHistoryTime(item.changedAt));
-        txtTime.setTextColor(android.graphics.Color.parseColor("#6B7680"));
-        txtTime.setTextSize(12);
-
-        if (item.note != null && !item.note.trim().isEmpty()) {
-            TextView txtNote = new TextView(this);
-            txtNote.setText(item.note.trim());
-            txtNote.setTextColor(android.graphics.Color.parseColor("#5F6B73"));
-            txtNote.setTextSize(13);
-            LinearLayout.LayoutParams noteParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            noteParams.setMargins(0, dp(2), 0, 0);
-            txtNote.setLayoutParams(noteParams);
-            textCol.addView(txtStatus);
-            textCol.addView(txtTime);
-            textCol.addView(txtNote);
-        } else {
-            textCol.addView(txtStatus);
-            textCol.addView(txtTime);
-        }
-
-        row.addView(dot);
-        row.addView(textCol);
-        return row;
-    }
-
-    private String formatHistoryTime(String isoTime) {
-        if (isoTime == null || isoTime.trim().isEmpty()) return "-";
-        try {
-            java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse(isoTime);
-            java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter
-                    .ofPattern("dd MMM yyyy, HH:mm", new java.util.Locale("id", "ID"));
-            return odt.format(fmt);
-        } catch (Exception e) {
-            return isoTime;
-        }
     }
 
     private void setActionLoading(boolean value) {

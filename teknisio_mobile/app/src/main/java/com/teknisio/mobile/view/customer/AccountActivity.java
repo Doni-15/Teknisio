@@ -366,35 +366,51 @@ public class AccountActivity extends BaseActivity {
         final EditText input = new EditText(this);
         input.setHint(hint);
         input.setText(isBlank(currentValue) ? "" : currentValue.trim());
+
         if (multiline) {
             input.setSingleLine(false);
             input.setMaxLines(4);
             input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         } else {
             input.setSingleLine(true);
+
             if ("phoneNumber".equals(fieldKey)) {
                 input.setInputType(android.text.InputType.TYPE_CLASS_PHONE);
             } else {
                 input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);
             }
         }
+
         int pad = dp(16);
         input.setPadding(pad, pad, pad, pad);
 
         builder.setView(input);
-        builder.setNegativeButton("Batal", (d, w) -> d.dismiss());
-        builder.setPositiveButton("Simpan", (d, w) -> {
-            String newValue = input.getText() == null ? "" : input.getText().toString().trim();
-            if (newValue.isEmpty()) {
-                AppToast.error(this, hint + " tidak boleh kosong.");
-                return;
-            }
-            submitProfileUpdate(fieldKey, newValue);
+        builder.setNegativeButton("Batal", null);
+        builder.setPositiveButton("Simpan", null);
+
+        AlertDialog dialog = builder.create();
+
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(v -> dialog.dismiss());
+
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                String newValue = input.getText() == null ? "" : input.getText().toString().trim();
+
+                if (newValue.isEmpty()) {
+                    AppToast.error(this, hint + " tidak boleh kosong.");
+                    input.requestFocus();
+                    return;
+                }
+
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+                submitProfileUpdate(fieldKey, newValue, dialog);
+            });
         });
-        builder.show();
+
+        dialog.show();
     }
 
-    private void submitProfileUpdate(String fieldKey, String newValue) {
+    private void submitProfileUpdate(String fieldKey, String newValue, AlertDialog dialog) {
         Map<String, String> body = new HashMap<>();
         body.put(fieldKey, newValue);
 
@@ -407,12 +423,14 @@ public class AccountActivity extends BaseActivity {
                             Response<ApiResponse<AuthUserResponse>> response
                     ) {
                         if (!response.isSuccessful()) {
+                            reEnableProfileDialogButton(dialog);
                             AppToast.error(AccountActivity.this,
                                     ErrorParser.parseError(response, "Gagal memperbarui profil."));
                             return;
                         }
                         ApiResponse<AuthUserResponse> body = response.body();
                         if (body == null || !body.success || body.data == null) {
+                            reEnableProfileDialogButton(dialog);
                             AppToast.error(AccountActivity.this,
                                     ErrorParser.getBestMessage(body, "Gagal memperbarui profil."));
                             return;
@@ -428,14 +446,29 @@ public class AccountActivity extends BaseActivity {
                                 body.data.address,
                                 body.data.technicianProfileId
                         );
+                        if (dialog != null && dialog.isShowing()) {
+                            dialog.dismiss();
+                        }
+
                         AppToast.success(AccountActivity.this, "Profil berhasil diperbarui.");
                     }
 
                     @Override
                     public void onFailure(Call<ApiResponse<AuthUserResponse>> call, Throwable t) {
+                        reEnableProfileDialogButton(dialog);
                         AppToast.error(AccountActivity.this, "Tidak bisa terhubung ke server.");
                     }
                 });
+    }
+
+    private void reEnableProfileDialogButton(AlertDialog dialog) {
+        if (dialog == null || !dialog.isShowing()) {
+            return;
+        }
+
+        if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+        }
     }
 
     private void openTechnicianSkills() {
