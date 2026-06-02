@@ -19,6 +19,7 @@ import com.teknisio.mobile.R;
 import com.teknisio.mobile.base.BaseActivity;
 import com.teknisio.mobile.model.request.CancelServiceRequestRequest;
 import com.teknisio.mobile.model.response.ApiResponse;
+import com.teknisio.mobile.model.response.CustomerTechnicianResponse;
 import com.teknisio.mobile.model.response.DeviceCategoryResponse;
 import com.teknisio.mobile.model.response.ServiceRequestResponse;
 import com.teknisio.mobile.model.response.StatusHistoryResponse;
@@ -32,6 +33,8 @@ import com.teknisio.mobile.util.StatusHistoryRenderer;
 import com.teknisio.mobile.view.customer.helper.ReviewDialogHelper;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.List;
 
 import retrofit2.Call;
@@ -46,10 +49,18 @@ public class ServiceRequestDetailActivity extends BaseActivity {
     private TextView txtOrderCode;
     private TextView txtOrderStatus;
     private TextView txtOrderTime;
+    private LinearLayout layoutOrderTechnicianSummary;
+    private TextView txtOrderTechnicianName;
+    private TextView txtOrderTechnicianMeta;
+    private TextView txtOrderTechnicianCategories;
     private TextView txtOrderCategories;
     private TextView txtOrderIssue;
     private TextView txtOrderAddress;
     private TextView txtCancelReason;
+    private LinearLayout layoutCompletionSummary;
+    private TextView txtFinalCostValue;
+    private TextView txtCompletionSummaryNoteLabel;
+    private TextView txtCompletionSummaryNote;
     private TextView txtDetailMessage;
     private Button btnCancelOrder;
     private Button btnWriteReview;
@@ -86,10 +97,18 @@ public class ServiceRequestDetailActivity extends BaseActivity {
         txtOrderCode = findViewById(R.id.txtOrderCode);
         txtOrderStatus = findViewById(R.id.txtOrderStatus);
         txtOrderTime = findViewById(R.id.txtOrderTime);
+        layoutOrderTechnicianSummary = findViewById(R.id.layoutOrderTechnicianSummary);
+        txtOrderTechnicianName = findViewById(R.id.txtOrderTechnicianName);
+        txtOrderTechnicianMeta = findViewById(R.id.txtOrderTechnicianMeta);
+        txtOrderTechnicianCategories = findViewById(R.id.txtOrderTechnicianCategories);
         txtOrderCategories = findViewById(R.id.txtOrderCategories);
         txtOrderIssue = findViewById(R.id.txtOrderIssue);
         txtOrderAddress = findViewById(R.id.txtOrderAddress);
         txtCancelReason = findViewById(R.id.txtCancelReason);
+        layoutCompletionSummary = findViewById(R.id.layoutCompletionSummary);
+        txtFinalCostValue = findViewById(R.id.txtFinalCostValue);
+        txtCompletionSummaryNoteLabel = findViewById(R.id.txtCompletionSummaryNoteLabel);
+        txtCompletionSummaryNote = findViewById(R.id.txtCompletionSummaryNote);
         txtDetailMessage = findViewById(R.id.txtDetailMessage);
         btnCancelOrder = findViewById(R.id.btnCancelOrder);
         btnWriteReview = findViewById(R.id.btnWriteReview);
@@ -157,6 +176,7 @@ public class ServiceRequestDetailActivity extends BaseActivity {
         txtOrderCategories.setText(getCategoriesText(order));
         txtOrderIssue.setText(getSafeText(order.issueDescription, "-"));
         txtOrderAddress.setText(buildAddress(order));
+        loadTechnicianSummary(order);
 
         if (!isBlank(order.cancelReason)) {
             txtCancelReason.setVisibility(View.VISIBLE);
@@ -177,6 +197,8 @@ public class ServiceRequestDetailActivity extends BaseActivity {
             btnCancelOrder.setVisibility(View.GONE);
         }
 
+        renderCompletionSummary(order);
+
         hasReview = ReviewStateStore.isReviewed(this, serviceRequestId);
 
         // Show review button only for COMPLETED orders that have not been reviewed from this device.
@@ -187,6 +209,109 @@ public class ServiceRequestDetailActivity extends BaseActivity {
         }
 
         txtDetailMessage.setText(getDetailMessage(order));
+    }
+
+    private void loadTechnicianSummary(ServiceRequestResponse order) {
+        if (layoutOrderTechnicianSummary == null) {
+            return;
+        }
+
+        if (order == null || isBlank(order.technicianProfileId)) {
+            layoutOrderTechnicianSummary.setVisibility(View.GONE);
+            return;
+        }
+
+        layoutOrderTechnicianSummary.setVisibility(View.VISIBLE);
+        txtOrderTechnicianName.setText("Memuat data teknisi...");
+        txtOrderTechnicianMeta.setText("Mengambil profil teknisi");
+        txtOrderTechnicianCategories.setText("");
+
+        ApiClient.getApiService(this)
+                .getTechnicianDetail(order.technicianProfileId)
+                .enqueue(new Callback<ApiResponse<CustomerTechnicianResponse>>() {
+                    @Override
+                    public void onResponse(
+                            Call<ApiResponse<CustomerTechnicianResponse>> call,
+                            Response<ApiResponse<CustomerTechnicianResponse>> response
+                    ) {
+                        if (!response.isSuccessful()
+                                || response.body() == null
+                                || !response.body().success
+                                || response.body().data == null) {
+                            renderTechnicianSummaryFallback();
+                            return;
+                        }
+
+                        renderTechnicianSummary(response.body().data);
+                    }
+
+                    @Override
+                    public void onFailure(Call<ApiResponse<CustomerTechnicianResponse>> call, Throwable t) {
+                        renderTechnicianSummaryFallback();
+                    }
+                });
+    }
+
+    private void renderTechnicianSummary(CustomerTechnicianResponse technician) {
+        if (technician == null) {
+            renderTechnicianSummaryFallback();
+            return;
+        }
+
+        txtOrderTechnicianName.setText(getSafeText(technician.name, "Teknisi"));
+
+        String ratingText = formatRating(technician.averageRating);
+        String jobsText = technician.totalJobs == null ? "0" : String.valueOf(technician.totalJobs);
+        String reviewsText = technician.ratingCount == null ? "0" : String.valueOf(technician.ratingCount);
+
+        txtOrderTechnicianMeta.setText("★ " + ratingText
+                + " • " + jobsText + " pekerjaan"
+                + " • " + reviewsText + " ulasan");
+
+        String categories = buildTechnicianCategoryText(technician.supportedDeviceCategories);
+
+        if (isBlank(categories)) {
+            txtOrderTechnicianCategories.setText("Keahlian teknisi belum tersedia.");
+        } else {
+            txtOrderTechnicianCategories.setText("Keahlian: " + categories);
+        }
+    }
+
+    private void renderTechnicianSummaryFallback() {
+        layoutOrderTechnicianSummary.setVisibility(View.VISIBLE);
+        txtOrderTechnicianName.setText("Teknisi");
+        txtOrderTechnicianMeta.setText("Profil teknisi belum bisa dimuat.");
+        txtOrderTechnicianCategories.setText("");
+    }
+
+    private String buildTechnicianCategoryText(List<DeviceCategoryResponse> categories) {
+        if (categories == null || categories.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder builder = new StringBuilder();
+
+        for (DeviceCategoryResponse category : categories) {
+            if (category == null || isBlank(category.name)) {
+                continue;
+            }
+
+            if (builder.length() > 0) {
+                builder.append(", ");
+            }
+
+            builder.append(category.name.trim());
+        }
+
+        return builder.toString();
+    }
+
+    private String formatRating(BigDecimal rating) {
+        if (rating == null) {
+            return "0.0";
+        }
+
+        return rating.setScale(1, java.math.RoundingMode.HALF_UP).toPlainString();
     }
 
     // -------------------------------------------------------------------------
@@ -393,8 +518,7 @@ public class ServiceRequestDetailActivity extends BaseActivity {
         }
 
         if ("COMPLETED".equals(status)) {
-            String cost = formatMoney(order.finalCost);
-            return isBlank(cost) ? "Order sudah selesai." : "Order selesai. Biaya akhir: " + cost;
+            return "Order selesai. Silakan lihat ringkasan biaya dan tulis ulasan.";
         }
 
         if ("CANCELLED".equals(status)) {
@@ -406,6 +530,32 @@ public class ServiceRequestDetailActivity extends BaseActivity {
         }
 
         return "";
+    }
+
+    private void renderCompletionSummary(ServiceRequestResponse order) {
+        String status = OrderStatusHelper.normalize(order == null ? null : order.status);
+
+        if (!"COMPLETED".equals(status) || order == null || order.finalCost == null) {
+            layoutCompletionSummary.setVisibility(View.GONE);
+            txtFinalCostValue.setText("Rp0");
+            txtCompletionSummaryNoteLabel.setVisibility(View.GONE);
+            txtCompletionSummaryNote.setVisibility(View.GONE);
+            txtCompletionSummaryNote.setText("-");
+            return;
+        }
+
+        layoutCompletionSummary.setVisibility(View.VISIBLE);
+        txtFinalCostValue.setText(formatMoney(order.finalCost));
+
+        if (!isBlank(order.technicianNote)) {
+            txtCompletionSummaryNoteLabel.setVisibility(View.VISIBLE);
+            txtCompletionSummaryNote.setVisibility(View.VISIBLE);
+            txtCompletionSummaryNote.setText(order.technicianNote.trim());
+        } else {
+            txtCompletionSummaryNoteLabel.setVisibility(View.GONE);
+            txtCompletionSummaryNote.setVisibility(View.GONE);
+            txtCompletionSummaryNote.setText("-");
+        }
     }
 
     private String buildAddress(ServiceRequestResponse order) {
@@ -446,7 +596,11 @@ public class ServiceRequestDetailActivity extends BaseActivity {
             return "";
         }
 
-        return "Rp" + value.toPlainString();
+        NumberFormat formatter = NumberFormat.getNumberInstance(new Locale("id", "ID"));
+        formatter.setMinimumFractionDigits(0);
+        formatter.setMaximumFractionDigits(0);
+
+        return "Rp" + formatter.format(value);
     }
 
     private void showError(String message) {

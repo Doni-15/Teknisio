@@ -88,6 +88,7 @@ public class CustomerHomeActivity extends BaseActivity {
         loadDeviceCategories();
     }
 
+
     private void bindViews() {
         txtAvatarInitial = findViewById(R.id.txtAvatarInitial);
         txtHomeName = findViewById(R.id.txtHomeName);
@@ -224,49 +225,75 @@ public class CustomerHomeActivity extends BaseActivity {
 
     private void loadAllTechnicians() {
         allTechnicians.clear();
+        carouselTechnicians.clear();
+        pendingTechnicianRequests = 0;
+        realTechnicianCount = 0;
+        carouselPosition = 0;
+        technicianCarouselReady = false;
+        technicianCarouselHandler.removeCallbacks(snapTechnicianRunnable);
 
         if (categories.isEmpty()) {
             showTechnicianMessage("Belum ada kategori untuk memuat teknisi.");
             return;
         }
 
-        showTechnicianMessage("Memuat semua teknisi...");
-        pendingTechnicianRequests = categories.size();
+        DeviceCategoryResponse featuredCategory = null;
 
         for (DeviceCategoryResponse category : categories) {
-            if (category == null
-                    || category.deviceCategoryId == null
-                    || category.deviceCategoryId.trim().isEmpty()) {
-                finishTechnicianBatchRequest();
-                continue;
+            if (category != null
+                    && category.deviceCategoryId != null
+                    && !category.deviceCategoryId.trim().isEmpty()) {
+                featuredCategory = category;
+                break;
             }
-
-            ApiClient.getApiService(this)
-                    .searchTechnicians(category.deviceCategoryId, "ONLINE", "rating")
-                    .enqueue(new Callback<ApiResponse<List<CustomerTechnicianResponse>>>() {
-                        @Override
-                        public void onResponse(
-                                Call<ApiResponse<List<CustomerTechnicianResponse>>> call,
-                                Response<ApiResponse<List<CustomerTechnicianResponse>>> response
-                        ) {
-                            if (response.isSuccessful()
-                                    && response.body() != null
-                                    && response.body().success
-                                    && response.body().data != null) {
-                                for (CustomerTechnicianResponse technician : response.body().data) {
-                                    addUniqueTechnician(technician);
-                                }
-                            }
-
-                            finishTechnicianBatchRequest();
-                        }
-
-                        @Override
-                        public void onFailure(Call<ApiResponse<List<CustomerTechnicianResponse>>> call, Throwable t) {
-                            finishTechnicianBatchRequest();
-                        }
-                    });
         }
+
+        if (featuredCategory == null) {
+            showTechnicianMessage("Belum ada kategori valid untuk memuat teknisi.");
+            return;
+        }
+
+        showTechnicianMessage("Memuat teknisi rekomendasi...");
+
+        ApiClient.getApiService(this)
+                .searchTechnicians(featuredCategory.deviceCategoryId, "ONLINE", "rating")
+                .enqueue(new Callback<ApiResponse<List<CustomerTechnicianResponse>>>() {
+                    @Override
+                    public void onResponse(
+                            Call<ApiResponse<List<CustomerTechnicianResponse>>> call,
+                            Response<ApiResponse<List<CustomerTechnicianResponse>>> response
+                    ) {
+                        if (!response.isSuccessful()
+                                || response.body() == null
+                                || !response.body().success
+                                || response.body().data == null) {
+                            showTechnicianMessage("Teknisi rekomendasi belum bisa dimuat.");
+                            return;
+                        }
+
+                        allTechnicians.clear();
+
+                        for (CustomerTechnicianResponse technician : response.body().data) {
+                            addUniqueTechnician(technician);
+
+                            if (allTechnicians.size() >= 8) {
+                                break;
+                            }
+                        }
+
+                        if (allTechnicians.isEmpty()) {
+                            showTechnicianMessage("Belum ada teknisi online untuk rekomendasi.");
+                            return;
+                        }
+
+                        renderTechnicians(allTechnicians);
+                    }
+
+                    @Override
+                    public void onFailure(Call<ApiResponse<List<CustomerTechnicianResponse>>> call, Throwable t) {
+                        showTechnicianMessage("Tidak bisa terhubung ke server.");
+                    }
+                });
     }
 
     private void finishTechnicianBatchRequest() {
