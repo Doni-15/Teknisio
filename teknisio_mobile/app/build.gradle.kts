@@ -44,7 +44,14 @@ dependencies {
     // Network
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // Map — OpenStreetMap (no API key required)
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
+
+    // Location
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)

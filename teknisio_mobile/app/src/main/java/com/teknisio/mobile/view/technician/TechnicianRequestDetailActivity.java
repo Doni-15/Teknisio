@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.widget.AppCompatButton;
 
+import android.content.Intent;
 import com.teknisio.mobile.R;
 import com.teknisio.mobile.base.BaseActivity;
 import com.teknisio.mobile.model.request.CompleteServiceRequestRequest;
@@ -25,6 +26,7 @@ import com.teknisio.mobile.util.StatusHistoryRenderer;
 import com.teknisio.mobile.util.TextHelper;
 import com.teknisio.mobile.util.ViewHelper;
 import com.teknisio.mobile.view.technician.helper.TechnicianRequestActionDialogHelper;
+import com.teknisio.mobile.view.tracking.TrackingMapActivity;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -58,8 +60,10 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
     private AppCompatButton btnRejectRequest;
     private AppCompatButton btnStartRequest;
     private AppCompatButton btnCompleteRequest;
+    private AppCompatButton btnNavigateToCustomer;
 
     private String serviceRequestId;
+    private ServiceRequestResponse currentServiceRequest;
     private boolean loading = false;
     private boolean actionLoading = false;
 
@@ -102,6 +106,7 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
         btnRejectRequest = findViewById(R.id.btnRejectRequest);
         btnStartRequest = findViewById(R.id.btnStartRequest);
         btnCompleteRequest = findViewById(R.id.btnCompleteRequest);
+        btnNavigateToCustomer = findViewById(R.id.btnNavigateToCustomer);
     }
 
     private void setupActions() {
@@ -111,6 +116,9 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
         btnRejectRequest.setOnClickListener(v -> showRejectDialog());
         btnStartRequest.setOnClickListener(v -> confirmStart());
         btnCompleteRequest.setOnClickListener(v -> showCompleteDialog());
+        if (btnNavigateToCustomer != null) {
+            btnNavigateToCustomer.setOnClickListener(v -> openNavigationMap());
+        }
     }
 
     private void loadDetail() {
@@ -144,6 +152,7 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
                         }
 
                         renderDetail(body.data);
+                        currentServiceRequest = body.data;
                         loadStatusHistory();
                     }
 
@@ -225,6 +234,7 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
             case "ACCEPTED":
                 txtTechDetailMessage.setText("Request sudah diterima. Mulai pengerjaan saat kamu sudah berada di lokasi atau siap bekerja.");
                 btnStartRequest.setVisibility(View.VISIBLE);
+                btnNavigateToCustomer.setVisibility(View.VISIBLE);
                 break;
 
             case "ON_PROGRESS":
@@ -257,6 +267,34 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
         btnRejectRequest.setVisibility(View.GONE);
         btnStartRequest.setVisibility(View.GONE);
         btnCompleteRequest.setVisibility(View.GONE);
+        btnNavigateToCustomer.setVisibility(View.GONE);
+    }
+
+    private void openNavigationMap() {
+        Intent intent = new Intent(this, TrackingMapActivity.class);
+        intent.putExtra(TrackingMapActivity.EXTRA_MODE, TrackingMapActivity.MODE_TECHNICIAN);
+        intent.putExtra(TrackingMapActivity.EXTRA_SERVICE_REQUEST_ID, serviceRequestId);
+
+        if (currentServiceRequest != null) {
+            // Use actual coordinates stored in the service request
+            double lat = 0.0;
+            double lng = 0.0;
+            // ServiceRequestResponse uses BigDecimal for lat/lng
+            if (currentServiceRequest.latitude != null) {
+                lat = currentServiceRequest.latitude.doubleValue();
+            }
+            if (currentServiceRequest.longitude != null) {
+                lng = currentServiceRequest.longitude.doubleValue();
+            }
+            intent.putExtra(TrackingMapActivity.EXTRA_CUSTOMER_LAT, lat);
+            intent.putExtra(TrackingMapActivity.EXTRA_CUSTOMER_LNG, lng);
+            intent.putExtra(TrackingMapActivity.EXTRA_TECHNICIAN_NAME,
+                    currentServiceRequest.customerName != null
+                            ? currentServiceRequest.customerName
+                            : "Pelanggan");
+        }
+
+        startActivity(intent);
     }
 
     private void confirmAccept() {

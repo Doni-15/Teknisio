@@ -319,5 +319,22 @@
             android:textStyle="bold"
             android:visibility="gone" />
 
+        <!-- GPS Tracking button — visible when status is ACCEPTED -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnTrackTechnician"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_order_primary"
+            android:backgroundTint="@null"
+            android:drawableStart="@drawable/ic_location_pin"
+            android:drawablePadding="8dp"
+            android:text="🗺 Lacak Teknisi"
+            android:textAllCaps="false"
+            android:textColor="#D4FFFF"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
     </LinearLayout>
 </ScrollView>
