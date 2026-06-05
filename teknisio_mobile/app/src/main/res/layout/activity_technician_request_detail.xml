@@ -251,6 +251,21 @@
                 android:textStyle="bold"
                 android:visibility="gone" />
 
+            <!-- GPS navigation button — visible when ACCEPTED -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnNavigateToCustomer"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_start_button"
+                android:backgroundTint="@null"
+                android:text="🗺 Navigasi ke Pelanggan"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnCompleteRequest"
                 android:layout_width="match_parent"

@@ -15,6 +15,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import android.content.Intent;
 import com.teknisio.mobile.R;
 import com.teknisio.mobile.base.BaseActivity;
 import com.teknisio.mobile.model.request.CancelServiceRequestRequest;
@@ -31,6 +32,7 @@ import com.teknisio.mobile.util.OrderStatusHelper;
 import com.teknisio.mobile.util.ReviewStateStore;
 import com.teknisio.mobile.util.StatusHistoryRenderer;
 import com.teknisio.mobile.view.customer.helper.ReviewDialogHelper;
+import com.teknisio.mobile.view.tracking.TrackingMapActivity;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -66,6 +68,7 @@ public class ServiceRequestDetailActivity extends BaseActivity {
     private Button btnWriteReview;
     private LinearLayout layoutStatusHistory;
     private TextView txtStatusHistoryLabel;
+    private android.widget.Button btnTrackTechnician;
 
     private String serviceRequestId;
     private ServiceRequestResponse currentOrder;
@@ -114,12 +117,16 @@ public class ServiceRequestDetailActivity extends BaseActivity {
         btnWriteReview = findViewById(R.id.btnWriteReview);
         layoutStatusHistory = findViewById(R.id.layoutStatusHistory);
         txtStatusHistoryLabel = findViewById(R.id.txtStatusHistoryLabel);
+        btnTrackTechnician = findViewById(R.id.btnTrackTechnician);
     }
 
     private void setupActions() {
         BackButtonHelper.setup(btnBack, this::finish);
         btnCancelOrder.setOnClickListener(v -> showCancelDialog());
         btnWriteReview.setOnClickListener(v -> showReviewDialog());
+        if (btnTrackTechnician != null) {
+            btnTrackTechnician.setOnClickListener(v -> openTrackingMap());
+        }
     }
 
     private void loadOrderDetail() {
@@ -209,6 +216,16 @@ public class ServiceRequestDetailActivity extends BaseActivity {
         }
 
         txtDetailMessage.setText(getDetailMessage(order));
+
+        // Show "Lacak Teknisi" button only when ACCEPTED (technician on the way)
+        if (btnTrackTechnician != null) {
+            String normalizedStatus = OrderStatusHelper.normalize(order.status);
+            if ("ACCEPTED".equals(normalizedStatus)) {
+                btnTrackTechnician.setVisibility(View.VISIBLE);
+            } else {
+                btnTrackTechnician.setVisibility(View.GONE);
+            }
+        }
     }
 
     private void loadTechnicianSummary(ServiceRequestResponse order) {
@@ -335,6 +352,28 @@ public class ServiceRequestDetailActivity extends BaseActivity {
                     @Override
                     public void onFailure(Call<ApiResponse<List<StatusHistoryResponse>>> call, Throwable t) {}
                 });
+    }
+
+    // -------------------------------------------------------------------------
+    // Tracking Map
+    // -------------------------------------------------------------------------
+
+    private void openTrackingMap() {
+        if (currentOrder == null) return;
+
+        Intent intent = new Intent(this, TrackingMapActivity.class);
+        intent.putExtra(TrackingMapActivity.EXTRA_MODE, TrackingMapActivity.MODE_CUSTOMER);
+        intent.putExtra(TrackingMapActivity.EXTRA_SERVICE_REQUEST_ID, currentOrder.serviceRequestId);
+        intent.putExtra(TrackingMapActivity.EXTRA_TECHNICIAN_NAME,
+                currentOrder.customerName != null ? currentOrder.customerName : "Teknisi");
+
+        // Customer's service location coordinates (stored in the order)
+        double lat = (currentOrder.latitude != null) ? currentOrder.latitude.doubleValue() : 0.0;
+        double lng = (currentOrder.longitude != null) ? currentOrder.longitude.doubleValue() : 0.0;
+        intent.putExtra(TrackingMapActivity.EXTRA_CUSTOMER_LAT, lat);
+        intent.putExtra(TrackingMapActivity.EXTRA_CUSTOMER_LNG, lng);
+
+        startActivity(intent);
     }
 
     // -------------------------------------------------------------------------

@@ -18,6 +18,8 @@ public class ServiceRequestResponse {
     public String issueDescription;
     public String address;
     public String addressDetail;
+    public Double latitude;
+    public Double longitude;
 
     public BigDecimal estimatedCost;
     public BigDecimal finalCost;
