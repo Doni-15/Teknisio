@@ -163,9 +163,10 @@ public class CustomerHomeActivity extends BaseActivity {
             });
         }
 
-        navChat.setOnClickListener(v ->
-                Toast.makeText(this, "Chat belum tersedia.", Toast.LENGTH_SHORT).show()
-        );
+        navChat.setOnClickListener(v -> {
+            Intent intent = new Intent(CustomerHomeActivity.this, OrderHistoryActivity.class);
+            startActivity(intent);
+        });
 
         navHistory.setOnClickListener(v -> {
             Intent intent = new Intent(CustomerHomeActivity.this, OrderHistoryActivity.class);
