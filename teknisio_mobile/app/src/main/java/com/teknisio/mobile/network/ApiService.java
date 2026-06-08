@@ -17,8 +17,8 @@ import com.teknisio.mobile.model.response.DeviceCategoryResponse;
 import com.teknisio.mobile.model.response.ReviewResponse;
 import com.teknisio.mobile.model.response.ServiceRequestResponse;
 import com.teknisio.mobile.model.response.ChatMessageResponse;
+import com.teknisio.mobile.model.response.LocationResponse;
 import com.teknisio.mobile.model.response.StatusHistoryResponse;
-import com.teknisio.mobile.view.tracking.TrackingMapActivity;
 
 import java.util.List;
 import java.util.Map;
@@ -153,7 +153,7 @@ public interface ApiService {
 
     // GPS Location — polling fallback
     @GET("api/location/{serviceRequestId}")
-    Call<ApiResponse<TrackingMapActivity.LocationResponse>> getLastTechnicianLocation(
+    Call<ApiResponse<LocationResponse>> getLastTechnicianLocation(
             @Path("serviceRequestId") String serviceRequestId
     );
 

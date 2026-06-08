@@ -245,8 +245,9 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
                 break;
 
             case "ON_PROGRESS":
-                txtTechDetailMessage.setText("Request sedang dikerjakan. Selesaikan pekerjaan setelah servis benar-benar selesai.");
+                txtTechDetailMessage.setText("Request sedang dikerjakan. Bagikan lokasi tetap aktif agar pelanggan bisa memantau teknisi.");
                 btnCompleteRequest.setVisibility(View.VISIBLE);
+                btnNavigateToCustomer.setVisibility(View.VISIBLE);
                 if (btnTechnicianChat != null) btnTechnicianChat.setVisibility(View.VISIBLE);
                 break;
 

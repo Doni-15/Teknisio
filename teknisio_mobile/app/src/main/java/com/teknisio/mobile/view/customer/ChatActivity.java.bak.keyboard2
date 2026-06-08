@@ -1,8 +1,8 @@
 package com.teknisio.mobile.view.customer;
 
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -12,6 +12,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -50,9 +51,6 @@ import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import retrofit2.Call;
 import retrofit2.Callback;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.core.graphics.Insets;
 
 /**
  * Real-time chat screen between customer and technician for a service request.
@@ -73,7 +71,6 @@ public class ChatActivity extends BaseActivity {
     private TextView txtChatSubtitle;
     private TextView txtChatEmptyState;
     private LinearLayout layoutMessages;
-    private LinearLayout layoutChatInputBar;
     private ScrollView scrollMessages;
     private EditText edtMessage;
     private Button btnSend;
@@ -83,13 +80,12 @@ public class ChatActivity extends BaseActivity {
     private String chatPartnerName;
     private String currentUserId;
     private boolean loadingHistory = false;
-    private int chatInputDefaultBottomMargin = 0;
-    private float lastInputBarTranslationY = 0f;
 
     // WebSocket
     private WebSocket chatWebSocket;
     private OkHttpClient wsClient;
     private boolean stompConnected = false;
+    private boolean keyboardVisible = false;
 
     // Message list
     private final List<ChatMessageResponse> messages = new ArrayList<>();
@@ -115,7 +111,6 @@ public class ChatActivity extends BaseActivity {
 
         bindViews();
         setupActions();
-        setupResponsiveKeyboardLift();
         connectChatWebSocket();
     }
 
@@ -139,7 +134,6 @@ public class ChatActivity extends BaseActivity {
         txtChatSubtitle = findViewById(R.id.txtChatSubtitle);
         txtChatEmptyState = findViewById(R.id.txtChatEmptyState);
         layoutMessages = findViewById(R.id.layoutMessages);
-        layoutChatInputBar = findViewById(R.id.layoutChatInputBar);
         scrollMessages = findViewById(R.id.scrollMessages);
         edtMessage = findViewById(R.id.edtMessage);
         btnSend = findViewById(R.id.btnSend);
@@ -163,113 +157,38 @@ public class ChatActivity extends BaseActivity {
             @Override
             public void afterTextChanged(android.text.Editable s) {
                 boolean hasText = s != null && s.toString().trim().length() > 0;
-                updateSendButtonState(hasText);
+                btnSend.setEnabled(hasText);
+                btnSend.setAlpha(hasText ? 1.0f : 0.5f);
+                btnSend.setTypeface(btnSend.getTypeface(), hasText ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
             }
         });
 
         // Start disabled
-        updateSendButtonState(false);
+        btnSend.setEnabled(false);
+        btnSend.setAlpha(0.5f);
 
         btnSend.setOnClickListener(v -> sendMessage());
 
         edtMessage.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
-                edtMessage.postDelayed(this::scrollToBottom, 250);
+                scheduleScrollToBottom(180);
             }
         });
 
-        edtMessage.setOnClickListener(v -> edtMessage.postDelayed(this::scrollToBottom, 250));
+        edtMessage.setOnClickListener(v -> scheduleScrollToBottom(180));
+
+        edtMessage.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
+                sendMessage();
+                return true;
+            }
+            return false;
+        });
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // WebSocket
     // ─────────────────────────────────────────────────────────────────────────
-
-    private void setupResponsiveKeyboardLift() {
-        getWindow().setSoftInputMode(
-                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
-                        | WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
-        );
-
-        View root = findViewById(R.id.rootChat);
-        if (root == null || layoutChatInputBar == null || scrollMessages == null) {
-            return;
-        }
-
-        ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
-            boolean keyboardVisibleNow = insets.isVisible(WindowInsetsCompat.Type.ime());
-
-            Insets imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime());
-            Insets navInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
-
-            int floatingLift = 0;
-
-            if (keyboardVisibleNow) {
-                // Floating murni: pakai tinggi keyboard asli.
-                // Jangan kurangi nav bar karena di beberapa device input jadi terbenam.
-                floatingLift = Math.max(0, imeInsets.bottom);
-
-                int maxLift = (int) (getResources().getDisplayMetrics().heightPixels * 0.55f);
-                floatingLift = Math.min(floatingLift, maxLift);
-            }
-
-            applyKeyboardFloatingLift(floatingLift, keyboardVisibleNow);
-
-            return insets;
-        });
-
-        edtMessage.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
-                ViewCompat.requestApplyInsets(root);
-                root.postDelayed(() -> ViewCompat.requestApplyInsets(root), 220);
-            }
-        });
-
-        edtMessage.setOnClickListener(v -> {
-            ViewCompat.requestApplyInsets(root);
-            root.postDelayed(() -> ViewCompat.requestApplyInsets(root), 220);
-        });
-
-        ViewCompat.requestApplyInsets(root);
-    }
-
-    private void animateInputBarTranslation(float targetTranslationY) {
-        if (layoutChatInputBar == null) {
-            return;
-        }
-
-        if (Math.abs(lastInputBarTranslationY - targetTranslationY) < 1f) {
-            return;
-        }
-
-        lastInputBarTranslationY = targetTranslationY;
-
-        layoutChatInputBar.animate().cancel();
-        layoutChatInputBar.animate()
-                .translationY(targetTranslationY)
-                .setDuration(170)
-                .setInterpolator(new android.view.animation.DecelerateInterpolator())
-                .start();
-    }
-
-    private void applyKeyboardFloatingLift(int floatingLift, boolean keyboardVisibleNow) {
-        if (layoutChatInputBar == null || scrollMessages == null) {
-            return;
-        }
-
-        // Floating effect: hanya input bar yang naik.
-        // Tidak pakai margin bottom, jadi tidak mengganggu layout chat.
-        animateInputBarTranslation(-floatingLift);
-
-        // Jangan ubah padding scroll saat keyboard muncul.
-        // Kalau padding/scroll diubah, chat ikut terdorong ke atas.
-        scrollMessages.setPadding(
-                scrollMessages.getPaddingLeft(),
-                scrollMessages.getPaddingTop(),
-                scrollMessages.getPaddingRight(),
-                dp(20)
-        );
-    }
 
     private void connectChatWebSocket() {
         wsClient = new OkHttpClient.Builder()
@@ -362,8 +281,6 @@ public class ChatActivity extends BaseActivity {
                             if (existing.chatId == null && msg.message.equals(existing.message)) {
                                 existing.chatId = msg.chatId;
                                 existing.sentAt = msg.sentAt;
-                                existing.isRead = msg.isRead;
-                                existing.read = msg.read;
                                 alreadyExists = true;
                                 break;
                             }
@@ -432,8 +349,47 @@ public class ChatActivity extends BaseActivity {
         txtChatAvatarInitial.setText(cleanName.substring(0, 1).toUpperCase());
     }
 
+    private void setupKeyboardAwareChatLayout() {
+        getWindow().setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                        | WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
+        );
 
-private void loadChatHistory() {
+        View root = findViewById(R.id.rootChat);
+        if (root == null) {
+            return;
+        }
+
+        root.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                Rect visibleFrame = new Rect();
+                root.getWindowVisibleDisplayFrame(visibleFrame);
+
+                int rootHeight = root.getRootView().getHeight();
+                int visibleHeight = visibleFrame.height();
+                int heightDiff = rootHeight - visibleHeight;
+
+                boolean nowVisible = heightDiff > dp(180);
+
+                if (nowVisible != keyboardVisible) {
+                    keyboardVisible = nowVisible;
+
+                    if (keyboardVisible) {
+                        scheduleScrollToBottom(120);
+                    } else {
+                        scheduleScrollToBottom(80);
+                    }
+                }
+            }
+        });
+    }
+
+    private void scheduleScrollToBottom(long delayMs) {
+        new Handler(Looper.getMainLooper()).postDelayed(this::scrollToBottom, delayMs);
+    }
+
+    private void loadChatHistory() {
         loadingHistory = true;
         ApiClient.getApiService(this)
                 .getChatHistory(serviceRequestId)
@@ -483,23 +439,6 @@ private void loadChatHistory() {
                 });
     }
 
-    private void updateSendButtonState(boolean hasText) {
-        if (btnSend == null) {
-            return;
-        }
-
-        btnSend.setEnabled(true);
-        btnSend.setAlpha(1.0f);
-
-        if (hasText) {
-            btnSend.setBackgroundResource(R.drawable.bg_chat_send_circle_active);
-            btnSend.setTextColor(Color.WHITE);
-        } else {
-            btnSend.setBackgroundResource(R.drawable.bg_chat_send_circle_inactive);
-            btnSend.setTextColor(Color.parseColor("#6B7280"));
-        }
-    }
-
     private void sendMessage() {
         String message = edtMessage.getText().toString().trim();
         if (message.isEmpty()) return;
@@ -515,10 +454,11 @@ private void loadChatHistory() {
         optimisticMsg.message = message;
         optimisticMsg.sentAt = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", java.util.Locale.US).format(new java.util.Date());
         optimisticMsg.isRead = false;
-        optimisticMsg.read = false;
 
         messages.add(optimisticMsg);
         renderMessages();
+        edtMessage.requestFocus();
+        scheduleScrollToBottom(120);
 
         sendMessageViaWebSocket(message);
     }
@@ -686,13 +626,12 @@ private void loadChatHistory() {
 
         String ticks;
 
-        if (msg == null || isBlank(msg.chatId)) {
-            // Belum ada id server: masih optimistic/local.
-            ticks = "✓";
-        } else {
-            // Sudah ada id server: terkirim ke DB/server.
-            // Biru/tidaknya ditentukan oleh isReadFromBackend().
+        if (msg != null && msg.isRead) {
             ticks = "✓✓";
+        } else if (msg != null && !isBlank(msg.chatId)) {
+            ticks = "✓✓";
+        } else {
+            ticks = "✓";
         }
 
         if (isBlank(time)) {
@@ -707,13 +646,11 @@ private void loadChatHistory() {
             return Color.parseColor("#92A0A6");
         }
 
-        if (msg != null && msg.isReadFromBackend()) {
-            // Strict: biru hanya kalau backend/DB bilang read.
-            return Color.parseColor("#4FC3F7");
+        if (msg != null && msg.isRead) {
+            return Color.parseColor("#78D7FF");
         }
 
-        // Belum read: abu-abu terang, bukan biru.
-        return Color.parseColor("#B8C7D9");
+        return Color.parseColor("#DCE8FF");
     }
 
     private void scrollToBottom() {
@@ -730,7 +667,7 @@ private void loadChatHistory() {
                 .replace("https://", "wss://")
                 .replace("http://", "ws://");
         if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
-        return base + "/ws";
+        return base + "/ws/websocket";
     }
 
     private String formatTime(String isoTime) {
