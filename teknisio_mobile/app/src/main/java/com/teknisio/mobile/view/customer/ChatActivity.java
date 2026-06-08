@@ -218,7 +218,12 @@ public class ChatActivity extends BaseActivity {
             @Override
             public void onFailure(WebSocket webSocket, Throwable t, Response response) {
                 Log.w(TAG, "Chat WS failed: " + t.getMessage());
-                runOnUiThread(() -> txtChatSubtitle.setText("Terputus — coba lagi nanti"));
+                String errMsg = "Terputus: " + t.getMessage();
+                if (response != null) {
+                    errMsg += " (HTTP " + response.code() + " " + response.message() + ")";
+                }
+                final String finalMsg = errMsg;
+                runOnUiThread(() -> txtChatSubtitle.setText(finalMsg));
             }
 
             @Override
@@ -451,7 +456,7 @@ public class ChatActivity extends BaseActivity {
                 .replace("https://", "wss://")
                 .replace("http://", "ws://");
         if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
-        return base + "/ws/";
+        return base + "/ws";
     }
 
     private String formatTime(String isoTime) {
