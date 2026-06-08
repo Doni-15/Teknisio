@@ -103,7 +103,7 @@ public class ChatService {
    */
   @Transactional(readOnly = true)
   public long getUnreadCount(UUID userId) {
-    return chatMessageRepository.countByPenerima_IdAndDibacaFalse(userId);
+    return chatMessageRepository.countByPenerima_IdUserAndDibacaFalse(userId);
   }
 
   private ChatMessageResponse toResponse(ChatMessage chat) {
