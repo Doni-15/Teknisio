@@ -170,9 +170,9 @@ public class TrackingMapActivity extends BaseActivity {
         disconnectSubscriberWebSocket();
         unregisterLocationReceiver();
 
-        if (MODE_TECHNICIAN.equals(mode)) {
-            LocationSharingService.stop(this);
-        }
+        // Jangan stop LocationSharingService saat teknisi keluar dari halaman map.
+        // Live GPS harus tetap berjalan lewat foreground service agar customer tetap bisa melacak.
+        // Stop service sebaiknya dilakukan saat request selesai/cancel, bukan saat Activity destroy.
 
         if (mapView != null) {
             mapView.onDetach();

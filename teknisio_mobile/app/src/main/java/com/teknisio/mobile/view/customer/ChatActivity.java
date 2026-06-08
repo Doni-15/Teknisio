@@ -729,7 +729,7 @@ private void loadChatHistory() {
                 .replace("https://", "wss://")
                 .replace("http://", "ws://");
         if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
-        return base + "/ws";
+        return base + "/ws/websocket";
     }
 
     private String formatTime(String isoTime) {
