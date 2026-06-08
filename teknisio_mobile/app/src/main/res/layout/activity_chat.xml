@@ -100,14 +100,17 @@
 
         <Button
             android:id="@+id/btnSend"
-            android:layout_width="52dp"
+            android:layout_width="wrap_content"
             android:layout_height="48dp"
             android:layout_marginStart="8dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:background="@drawable/bg_order_primary"
-            android:text="✈"
+            android:text="Kirim"
             android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:padding="0dp" />
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:minWidth="64dp" />
     </LinearLayout>
 
 </LinearLayout>

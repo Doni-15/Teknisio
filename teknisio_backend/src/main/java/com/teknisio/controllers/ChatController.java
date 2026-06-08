@@ -56,6 +56,11 @@ public class ChatController {
           @Payload @Valid ChatMessageRequest request,
           @AuthenticationPrincipal CustomUserDetails userDetails
   ) {
+    if (userDetails == null) {
+      log.error("STOMP message rejected: user not authenticated (JWT missing in CONNECT frame?)");
+      throw new IllegalStateException(
+          "User not authenticated — ensure STOMP CONNECT includes Authorization header with Bearer token");
+    }
     // Override the serviceRequestId from the STOMP path for consistency
     request.setServiceRequestId(serviceRequestId);
     UUID senderId = userDetails.getIdUser();
