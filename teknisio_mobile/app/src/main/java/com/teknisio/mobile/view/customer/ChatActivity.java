@@ -106,7 +106,6 @@ public class ChatActivity extends BaseActivity {
         bindViews();
         setupActions();
         connectChatWebSocket();
-        loadChatHistory();
     }
 
     @Override
@@ -199,9 +198,14 @@ public class ChatActivity extends BaseActivity {
                     webSocket.send(subscribeFrame);
                     runOnUiThread(() -> txtChatSubtitle.setText("Online"));
                 } else if (text.startsWith("MESSAGE")) {
-                    int bodyStart = text.indexOf("\n\n");
+                    int bodyStart = text.indexOf("\r\n\r\n");
+                    int offset = 4;
+                    if (bodyStart < 0) {
+                        bodyStart = text.indexOf("\n\n");
+                        offset = 2;
+                    }
                     if (bodyStart >= 0) {
-                        String body = text.substring(bodyStart + 2).replace("\u0000", "").trim();
+                        String body = text.substring(bodyStart + offset).replace("\u0000", "").trim();
                         handleIncomingMessage(body);
                     }
                 } else if (text.contains("\nmessage:")) {
@@ -229,29 +233,38 @@ public class ChatActivity extends BaseActivity {
             ChatMessageResponse msg = gson.fromJson(json, ChatMessageResponse.class);
             if (msg != null && !isBlank(msg.message)) {
                 runOnUiThread(() -> {
-                    // Don't add if it's our own message (already shown via optimistic UI)
-                    boolean isOwnMessage = currentUserId != null && currentUserId.equals(msg.senderId)
-                            && msg.chatId == null;
-                    if (!isOwnMessage) {
-                        // Also skip if already exists (e.g., relayed back by server after DB save)
-                        boolean alreadyExists = false;
-                        if (msg.chatId != null) {
-                            for (ChatMessageResponse existing : messages) {
-                                if (msg.chatId.equals(existing.chatId)) {
-                                    alreadyExists = true;
-                                    // Update the optimistic entry with the real chatId
-                                    if (existing.chatId == null) {
-                                        existing.chatId = msg.chatId;
-                                        existing.sentAt = msg.sentAt;
-                                    }
-                                    break;
-                                }
+                    boolean alreadyExists = false;
+
+                    // 1. Check if message with this chatId already exists in the list
+                    if (msg.chatId != null) {
+                        for (ChatMessageResponse existing : messages) {
+                            if (msg.chatId.equals(existing.chatId)) {
+                                alreadyExists = true;
+                                break;
                             }
                         }
-                        if (!alreadyExists) {
-                            messages.add(msg);
-                            addMessageBubble(msg);
-                            scrollToBottom();
+                    }
+
+                    // 2. If it's our own message and wasn't found by chatId, match with the optimistic entry
+                    if (!alreadyExists && currentUserId != null && currentUserId.equals(msg.senderId)) {
+                        for (ChatMessageResponse existing : messages) {
+                            if (existing.chatId == null && msg.message.equals(existing.message)) {
+                                existing.chatId = msg.chatId;
+                                existing.sentAt = msg.sentAt;
+                                alreadyExists = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!alreadyExists) {
+                        messages.add(msg);
+                        addMessageBubble(msg);
+                        scrollToBottom();
+
+                        // 3. Mark the message as read if it is from the opponent
+                        if (currentUserId != null && !currentUserId.equals(msg.senderId)) {
+                            markMessagesAsRead();
                         }
                     }
                 });
@@ -426,6 +439,7 @@ public class ChatActivity extends BaseActivity {
 
     private void scrollToBottom() {
         scrollMessages.post(() -> scrollMessages.fullScroll(View.FOCUS_DOWN));
+        scrollMessages.postDelayed(() -> scrollMessages.fullScroll(View.FOCUS_DOWN), 100);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

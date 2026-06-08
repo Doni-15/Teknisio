@@ -72,7 +72,7 @@ public class SecurityConfig {
         .requestMatchers("/api/location/**").authenticated()
 
         // WebSocket handshake — must be permitted so SockJS/STOMP can connect
-        .requestMatchers("/ws/**").permitAll()
+        .requestMatchers("/ws", "/ws/**").permitAll()
 
         .requestMatchers("/api/customers/**").hasRole("CUSTOMER")
         .requestMatchers("/api/technicians/**").hasRole("TECHNICIAN")
