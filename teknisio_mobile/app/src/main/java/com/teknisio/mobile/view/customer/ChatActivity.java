@@ -686,13 +686,12 @@ private void loadChatHistory() {
 
         String ticks;
 
-        if (msg == null || isBlank(msg.chatId)) {
-            // Belum ada id server: masih optimistic/local.
-            ticks = "✓";
-        } else {
-            // Sudah ada id server: terkirim ke DB/server.
-            // Biru/tidaknya ditentukan oleh isReadFromBackend().
+        if (msg != null && msg.isReadFromBackend()) {
+            // DB/backend bilang sudah dibaca.
             ticks = "✓✓";
+        } else {
+            // Belum dibaca atau belum ada status read dari backend.
+            ticks = "✓";
         }
 
         if (isBlank(time)) {
@@ -708,11 +707,11 @@ private void loadChatHistory() {
         }
 
         if (msg != null && msg.isReadFromBackend()) {
-            // Strict: biru hanya kalau backend/DB bilang read.
+            // Biru hanya kalau backend/DB bilang read.
             return Color.parseColor("#4FC3F7");
         }
 
-        // Belum read: abu-abu terang, bukan biru.
+        // Belum read: abu-abu.
         return Color.parseColor("#B8C7D9");
     }
 
