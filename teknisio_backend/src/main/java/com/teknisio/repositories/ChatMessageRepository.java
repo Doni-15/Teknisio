@@ -12,5 +12,5 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> 
 
   List<ChatMessage> findByPermintaanLayanan_IdPermintaanOrderByWaktuKirimAsc(UUID idPermintaan);
 
-  long countByPenerima_IdAndDibacaFalse(UUID penerimaId);
+  long countByPenerima_IdUserAndDibacaFalse(UUID penerimaId);
 }
