@@ -408,10 +408,10 @@ public class ChatActivity extends BaseActivity {
         bubbleParams.setMargins(dp(8), dp(4), dp(8), dp(4));
         bubbleParams.gravity = isMine ? Gravity.END : Gravity.START;
         bubble.setLayoutParams(bubbleParams);
-        bubble.setPadding(dp(12), dp(8), dp(12), dp(8));
         bubble.setBackgroundResource(isMine
                 ? R.drawable.bg_chat_bubble_mine
                 : R.drawable.bg_chat_bubble_theirs);
+        bubble.setPadding(dp(12), dp(8), dp(12), dp(8));
 
         // Sender name (only for received messages)
         if (!isMine && !isBlank(msg.senderName)) {
