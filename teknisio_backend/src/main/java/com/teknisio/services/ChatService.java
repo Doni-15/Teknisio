@@ -1,5 +1,7 @@
 package com.teknisio.services;
 
+import com.teknisio.common.exception.ForbiddenException;
+import com.teknisio.common.exception.ResourceNotFoundException;
 import com.teknisio.dto.requests.ChatMessageRequest;
 import com.teknisio.dto.responses.ChatMessageResponse;
 import com.teknisio.model.entities.ChatMessage;
@@ -38,22 +40,18 @@ public class ChatService {
   public ChatMessageResponse sendMessage(UUID senderUserId, ChatMessageRequest request) {
     UUID permintaanId = UUID.fromString(request.getServiceRequestId());
 
-    PermintaanLayanan permintaan = permintaanLayananRepository.findById(permintaanId)
-            .orElseThrow(() -> new IllegalArgumentException("Service request not found: " + permintaanId));
+    PermintaanLayanan permintaan = getPermintaanForChat(permintaanId, senderUserId);
 
     User sender = userRepository.findById(senderUserId)
-            .orElseThrow(() -> new IllegalArgumentException("Sender not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Sender not found"));
 
-    // Determine receiver: if sender is the customer, receiver = technician; vice versa
     User receiver;
     if (permintaan.getPengguna().getIdUser().equals(senderUserId)) {
-      // Sender is customer → receiver is technician
       if (permintaan.getTeknisiProfile() == null || permintaan.getTeknisiProfile().getUser() == null) {
-        throw new IllegalArgumentException("Technician has not been assigned to this service request yet");
+        throw new ResourceNotFoundException("Technician has not been assigned to this service request yet");
       }
       receiver = permintaan.getTeknisiProfile().getUser();
     } else {
-      // Sender is technician → receiver is customer
       receiver = permintaan.getPengguna();
     }
 
@@ -69,7 +67,6 @@ public class ChatService {
 
     ChatMessageResponse response = toResponse(chat);
 
-    // Broadcast to both parties via STOMP topic
     messagingTemplate.convertAndSend("/topic/chat/" + permintaanId, response);
 
     log.debug("Chat message sent for serviceRequest {}: {}", permintaanId, request.getMessage());
@@ -77,11 +74,31 @@ public class ChatService {
     return response;
   }
 
+  private PermintaanLayanan getPermintaanForChat(UUID serviceRequestId, UUID currentUserId) {
+    PermintaanLayanan permintaan = permintaanLayananRepository.findById(serviceRequestId)
+            .orElseThrow(() -> new ResourceNotFoundException("Service request not found"));
+
+    boolean isCustomer = permintaan.getPengguna() != null
+            && permintaan.getPengguna().getIdUser().equals(currentUserId);
+
+    boolean isTechnician = permintaan.getTeknisiProfile() != null
+            && permintaan.getTeknisiProfile().getUser() != null
+            && permintaan.getTeknisiProfile().getUser().getIdUser().equals(currentUserId);
+
+    if (!isCustomer && !isTechnician) {
+      throw new ForbiddenException("You are not allowed to access this chat");
+    }
+
+    return permintaan;
+  }
+
   /**
    * Returns chat history for a given service request.
    */
   @Transactional(readOnly = true)
-  public List<ChatMessageResponse> getChatHistory(UUID serviceRequestId) {
+  public List<ChatMessageResponse> getChatHistory(UUID serviceRequestId, UUID currentUserId) {
+    getPermintaanForChat(serviceRequestId, currentUserId);
+
     List<ChatMessage> messages = chatMessageRepository
             .findByPermintaanLayanan_IdPermintaanOrderByWaktuKirimAsc(serviceRequestId);
 
@@ -95,6 +112,8 @@ public class ChatService {
    */
   @Transactional
   public void markAsRead(UUID serviceRequestId, UUID userId) {
+    getPermintaanForChat(serviceRequestId, userId);
+
     List<ChatMessage> messages = chatMessageRepository
             .findByPermintaanLayanan_IdPermintaanOrderByWaktuKirimAsc(serviceRequestId);
 
