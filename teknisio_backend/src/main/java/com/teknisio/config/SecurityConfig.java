@@ -68,6 +68,12 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/api/auth/profile").authenticated()
         .requestMatchers(HttpMethod.PUT, "/api/users/me").authenticated()
 
+        // GPS location endpoints — accessible by both CUSTOMER and TECHNICIAN roles
+        .requestMatchers("/api/location/**").authenticated()
+
+        // WebSocket handshake — must be permitted so SockJS/STOMP can connect
+        .requestMatchers("/ws/**").permitAll()
+
         .requestMatchers("/api/customers/**").hasRole("CUSTOMER")
         .requestMatchers("/api/technicians/**").hasRole("TECHNICIAN")
         .requestMatchers("/api/admin/**").hasRole("ADMIN")
