@@ -159,8 +159,10 @@ public class ChatActivity extends BaseActivity {
         chatWebSocket = wsClient.newWebSocket(request, new WebSocketListener() {
             @Override
             public void onOpen(WebSocket webSocket, Response response) {
-                // STOMP CONNECT
-                webSocket.send("CONNECT\naccept-version:1.2\nheart-beat:10000,10000\n\n\u0000");
+                // STOMP CONNECT with JWT token for authentication
+                String stompToken = (token != null && !token.isBlank()) ? token : "";
+                String connectFrame = "CONNECT\naccept-version:1.2\nheart-beat:10000,10000\nAuthorization:Bearer " + stompToken + "\n\n\u0000";
+                webSocket.send(connectFrame);
             }
 
             @Override
@@ -178,6 +180,10 @@ public class ChatActivity extends BaseActivity {
                         String body = text.substring(bodyStart + 2).replace("\u0000", "").trim();
                         handleIncomingMessage(body);
                     }
+                } else if (text.contains("\nmessage:")) {
+                    // STOMP ERROR frame — log the reason for debugging
+                    Log.e(TAG, "STOMP ERROR received: " + text);
+                    runOnUiThread(() -> txtChatSubtitle.setText("Autentikasi gagal — coba login ulang"));
                 }
             }
 
