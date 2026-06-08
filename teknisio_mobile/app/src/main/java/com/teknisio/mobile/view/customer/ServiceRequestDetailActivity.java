@@ -70,6 +70,8 @@ public class ServiceRequestDetailActivity extends BaseActivity {
     private TextView txtStatusHistoryLabel;
     private android.widget.Button btnTrackTechnician;
 
+    private android.widget.Button btnOpenChat;
+
     private String serviceRequestId;
     private ServiceRequestResponse currentOrder;
     private String loadedTechnicianName = null;  // cached from technician detail API
@@ -119,6 +121,7 @@ public class ServiceRequestDetailActivity extends BaseActivity {
         layoutStatusHistory = findViewById(R.id.layoutStatusHistory);
         txtStatusHistoryLabel = findViewById(R.id.txtStatusHistoryLabel);
         btnTrackTechnician = findViewById(R.id.btnTrackTechnician);
+        btnOpenChat = findViewById(R.id.btnOpenChat);
     }
 
     private void setupActions() {
@@ -127,6 +130,9 @@ public class ServiceRequestDetailActivity extends BaseActivity {
         btnWriteReview.setOnClickListener(v -> showReviewDialog());
         if (btnTrackTechnician != null) {
             btnTrackTechnician.setOnClickListener(v -> openTrackingMap());
+        }
+        if (btnOpenChat != null) {
+            btnOpenChat.setOnClickListener(v -> openChat());
         }
     }
 
@@ -218,13 +224,22 @@ public class ServiceRequestDetailActivity extends BaseActivity {
 
         txtDetailMessage.setText(getDetailMessage(order));
 
-        // Show "Lacak Teknisi" button only when ACCEPTED (technician on the way)
+        // Show tracking + chat buttons when ACCEPTED or ON_PROGRESS
         if (btnTrackTechnician != null) {
             String normalizedStatus = OrderStatusHelper.normalize(order.status);
-            if ("ACCEPTED".equals(normalizedStatus)) {
+            if ("ACCEPTED".equals(normalizedStatus) || "ON_PROGRESS".equals(normalizedStatus)) {
                 btnTrackTechnician.setVisibility(View.VISIBLE);
             } else {
                 btnTrackTechnician.setVisibility(View.GONE);
+            }
+        }
+
+        if (btnOpenChat != null) {
+            String normalizedStatus = OrderStatusHelper.normalize(order.status);
+            if ("ACCEPTED".equals(normalizedStatus) || "ON_PROGRESS".equals(normalizedStatus)) {
+                btnOpenChat.setVisibility(View.VISIBLE);
+            } else {
+                btnOpenChat.setVisibility(View.GONE);
             }
         }
     }
@@ -360,6 +375,16 @@ public class ServiceRequestDetailActivity extends BaseActivity {
     // -------------------------------------------------------------------------
     // Tracking Map
     // -------------------------------------------------------------------------
+
+    private void openChat() {
+        if (currentOrder == null) return;
+
+        Intent intent = new Intent(this, ChatActivity.class);
+        intent.putExtra(ChatActivity.EXTRA_SERVICE_REQUEST_ID, currentOrder.serviceRequestId);
+        intent.putExtra(ChatActivity.EXTRA_CHAT_PARTNER_NAME,
+                loadedTechnicianName != null ? loadedTechnicianName : "Teknisi");
+        startActivity(intent);
+    }
 
     private void openTrackingMap() {
         if (currentOrder == null) return;

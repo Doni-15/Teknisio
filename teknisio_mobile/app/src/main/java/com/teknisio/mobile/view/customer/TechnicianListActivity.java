@@ -47,6 +47,8 @@ public class TechnicianListActivity extends BaseActivity {
     private LinearLayout layoutTechnicians;
     private TextView txtTechnicianEmpty;
     private Button btnMeetTechnician;
+    private android.widget.HorizontalScrollView scrollCategoryFilter;
+    private LinearLayout layoutCategoryChips;
 
     private String categoryId;
     private String categoryName;
@@ -55,6 +57,8 @@ public class TechnicianListActivity extends BaseActivity {
 
     private final List<CustomerTechnicianResponse> technicians = new ArrayList<>();
     private CustomerTechnicianResponse selectedTechnician;
+    private final List<DeviceCategoryResponse> allCategories = new ArrayList<>();
+    private String activeFilterCategoryId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +87,8 @@ public class TechnicianListActivity extends BaseActivity {
         layoutTechnicians = findViewById(R.id.layoutTechnicians);
         txtTechnicianEmpty = findViewById(R.id.txtTechnicianEmpty);
         btnMeetTechnician = findViewById(R.id.btnMeetTechnician);
+        scrollCategoryFilter = findViewById(R.id.scrollCategoryFilter);
+        layoutCategoryChips = findViewById(R.id.layoutCategoryChips);
     }
 
     private boolean setupInitialData() {
@@ -132,16 +138,93 @@ public class TechnicianListActivity extends BaseActivity {
     }
 
     private void loadTechnicians() {
+        // Load categories for filter chips first
+        loadDeviceCategories();
+
         if (showAllTechnicians) {
             loadAllTechnicians();
             return;
         }
 
+        activeFilterCategoryId = categoryId;
+        loadTechniciansByCategory(categoryId);
+    }
+
+    private void loadDeviceCategories() {
+        ApiClient.getApiService(this)
+                .getDeviceCategories()
+                .enqueue(new Callback<ApiResponse<List<DeviceCategoryResponse>>>() {
+                    @Override
+                    public void onResponse(
+                            Call<ApiResponse<List<DeviceCategoryResponse>>> call,
+                            Response<ApiResponse<List<DeviceCategoryResponse>>> response
+                    ) {
+                        if (response.isSuccessful()
+                                && response.body() != null
+                                && response.body().success
+                                && response.body().data != null) {
+                            allCategories.clear();
+                            allCategories.addAll(response.body().data);
+                            renderCategoryChips();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ApiResponse<List<DeviceCategoryResponse>>> call, Throwable t) {}
+                });
+    }
+
+    private void renderCategoryChips() {
+        if (allCategories.isEmpty() || showAllTechnicians) {
+            scrollCategoryFilter.setVisibility(android.view.View.GONE);
+            return;
+        }
+
+        layoutCategoryChips.removeAllViews();
+        scrollCategoryFilter.setVisibility(android.view.View.VISIBLE);
+
+        for (DeviceCategoryResponse category : allCategories) {
+            if (category == null || isBlank(category.deviceCategoryId)) continue;
+
+            TextView chip = new TextView(TechnicianListActivity.this);
+            String displayName = getCleanCategoryName(category.name);
+            boolean active = category.deviceCategoryId.equals(activeFilterCategoryId);
+
+            chip.setText(displayName);
+            chip.setTextSize(13);
+            chip.setTypeface(Typeface.DEFAULT_BOLD);
+            chip.setTextColor(Color.parseColor(active ? "#FFFFFF" : "#2F4A8A"));
+            chip.setBackgroundResource(active
+                    ? R.drawable.bg_category_chip_selected
+                    : R.drawable.bg_category_chip_unselected);
+            chip.setGravity(Gravity.CENTER);
+            chip.setPadding(dp(14), dp(7), dp(14), dp(7));
+            chip.setAllCaps(false);
+
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    dp(36));
+            params.setMargins(0, 0, dp(8), 0);
+            chip.setLayoutParams(params);
+
+            chip.setOnClickListener(v -> {
+                activeFilterCategoryId = category.deviceCategoryId;
+                txtCategoryName.setText(getCleanCategoryName(category.name));
+                imgCategoryIcon.setImageResource(getCategoryIconResId(category.name));
+                renderCategoryChips();
+                loadTechniciansByCategory(category.deviceCategoryId);
+            });
+
+            layoutCategoryChips.addView(chip);
+        }
+    }
+
+    private void loadTechniciansByCategory(String filterCategoryId) {
         showMessage("Memuat teknisi spesialis " + getCleanCategoryName(categoryName) + "...");
         setLoading(true);
 
         ApiClient.getApiService(this)
-                .searchTechnicians(categoryId, "ONLINE", "rating")
+                .searchTechnicians(filterCategoryId, "ONLINE", "rating")
                 .enqueue(new Callback<ApiResponse<List<CustomerTechnicianResponse>>>() {
                     @Override
                     public void onResponse(
