@@ -218,7 +218,7 @@ public class CustomerHomeActivity extends BaseActivity {
 
                     @Override
                     public void onFailure(Call<ApiResponse<List<DeviceCategoryResponse>>> call, Throwable t) {
-                        showCategoryMessage("Tidak bisa terhubung ke server.");
+                        showCategoryMessage("Tidak bisa terhubung ke server: " + t.getMessage());
                         showTechnicianMessage("Teknisi belum bisa dimuat.");
                     }
                 });
@@ -292,7 +292,7 @@ public class CustomerHomeActivity extends BaseActivity {
 
                     @Override
                     public void onFailure(Call<ApiResponse<List<CustomerTechnicianResponse>>> call, Throwable t) {
-                        showTechnicianMessage("Tidak bisa terhubung ke server.");
+                        showTechnicianMessage("Tidak bisa terhubung ke server: " + t.getMessage());
                     }
                 });
     }

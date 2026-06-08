@@ -256,7 +256,7 @@ public class TechnicianHistoryActivity extends BaseActivity {
         );
 
         TextView time = createText(
-                "Waktu request: " + TextHelper.safe(request == null ? null : request.requestTime, "-"),
+                "Waktu request: " + TextHelper.formatDateTime(request == null ? null : request.requestTime),
                 "#6B7680",
                 12,
                 false

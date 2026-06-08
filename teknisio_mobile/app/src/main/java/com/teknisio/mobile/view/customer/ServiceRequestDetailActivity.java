@@ -31,6 +31,7 @@ import com.teknisio.mobile.util.ErrorParser;
 import com.teknisio.mobile.util.OrderStatusHelper;
 import com.teknisio.mobile.util.ReviewStateStore;
 import com.teknisio.mobile.util.StatusHistoryRenderer;
+import com.teknisio.mobile.util.TextHelper;
 import com.teknisio.mobile.view.customer.helper.ReviewDialogHelper;
 import com.teknisio.mobile.view.tracking.TrackingMapActivity;
 
@@ -186,7 +187,7 @@ public class ServiceRequestDetailActivity extends BaseActivity {
         txtOrderStatus.setTextColor(Color.WHITE);
         txtOrderStatus.setTypeface(Typeface.DEFAULT_BOLD);
 
-        txtOrderTime.setText("Waktu request: " + getSafeText(order.requestTime, "-"));
+        txtOrderTime.setText("Waktu request: " + TextHelper.formatDateTime(order.requestTime));
         txtOrderCategories.setText(getCategoriesText(order));
         txtOrderIssue.setText(getSafeText(order.issueDescription, "-"));
         txtOrderAddress.setText(buildAddress(order));

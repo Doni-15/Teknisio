@@ -174,7 +174,7 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
         txtTechOrderCode.setText(getSafeText(request.serviceRequestCode, "Request"));
         txtTechOrderStatus.setText(OrderStatusHelper.getDisplayStatus(request.status));
         txtTechOrderStatus.setBackground(makeRounded(OrderStatusHelper.getStatusColor(request.status), 16));
-        txtTechOrderTime.setText("Waktu request: " + getSafeText(request.requestTime, "-"));
+        txtTechOrderTime.setText("Waktu request: " + TextHelper.formatDateTime(request.requestTime));
 
         txtTechCustomer.setText(buildCustomerText(request));
         txtTechCategories.setText(getCategoriesText(request));
