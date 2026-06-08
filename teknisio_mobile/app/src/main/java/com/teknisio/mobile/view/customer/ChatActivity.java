@@ -135,6 +135,23 @@ public class ChatActivity extends BaseActivity {
         }
         txtChatSubtitle.setText("Menghubungkan...");
 
+        // Bold + enable send button only when there is text in the input
+        edtMessage.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                boolean hasText = s != null && s.toString().trim().length() > 0;
+                btnSend.setEnabled(hasText);
+                btnSend.setAlpha(hasText ? 1.0f : 0.5f);
+                btnSend.setTypeface(btnSend.getTypeface(), hasText ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+            }
+        });
+
+        // Start disabled
+        btnSend.setEnabled(false);
+        btnSend.setAlpha(0.5f);
+
         btnSend.setOnClickListener(v -> sendMessage());
     }
 
@@ -293,6 +310,21 @@ public class ChatActivity extends BaseActivity {
         if (message.isEmpty()) return;
 
         edtMessage.setText("");
+
+        // Optimistically add own message to UI immediately
+        ChatMessageResponse optimisticMsg = new ChatMessageResponse();
+        optimisticMsg.chatId = null;
+        optimisticMsg.serviceRequestId = serviceRequestId;
+        optimisticMsg.senderId = currentUserId;
+        optimisticMsg.senderName = null; // own message, no name needed
+        optimisticMsg.message = message;
+        optimisticMsg.sentAt = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", java.util.Locale.US).format(new java.util.Date());
+        optimisticMsg.isRead = false;
+
+        messages.add(optimisticMsg);
+        addMessageBubble(optimisticMsg);
+        scrollToBottom();
+
         sendMessageViaWebSocket(message);
     }
 
