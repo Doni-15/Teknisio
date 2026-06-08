@@ -266,6 +266,21 @@
                 android:textStyle="bold"
                 android:visibility="gone" />
 
+            <!-- Chat button — visible when ACCEPTED or ON_PROGRESS -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnTechnicianChat"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_home_card"
+                android:backgroundTint="@null"
+                android:text="💬 Chat Pelanggan"
+                android:textAllCaps="false"
+                android:textColor="#2F4A8A"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnCompleteRequest"
                 android:layout_width="match_parent"

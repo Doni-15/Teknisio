@@ -100,6 +100,23 @@
             android:text="Memuat teknisi..."
             android:textColor="#6B7680"
             android:textSize="13sp" />
+
+        <!-- Category filter chips -->
+        <HorizontalScrollView
+            android:id="@+id/scrollCategoryFilter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/layoutCategoryChips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingEnd="8dp" />
+        </HorizontalScrollView>
     </LinearLayout>
 
     <ScrollView

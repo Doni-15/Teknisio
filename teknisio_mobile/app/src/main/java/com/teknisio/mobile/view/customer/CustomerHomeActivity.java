@@ -163,9 +163,10 @@ public class CustomerHomeActivity extends BaseActivity {
             });
         }
 
-        navChat.setOnClickListener(v ->
-                Toast.makeText(this, "Chat belum tersedia.", Toast.LENGTH_SHORT).show()
-        );
+        navChat.setOnClickListener(v -> {
+            Intent intent = new Intent(CustomerHomeActivity.this, OrderHistoryActivity.class);
+            startActivity(intent);
+        });
 
         navHistory.setOnClickListener(v -> {
             Intent intent = new Intent(CustomerHomeActivity.this, OrderHistoryActivity.class);
@@ -190,7 +191,21 @@ public class CustomerHomeActivity extends BaseActivity {
                             Response<ApiResponse<List<DeviceCategoryResponse>>> response
                     ) {
                         if (!response.isSuccessful() || response.body() == null || !response.body().success) {
-                            showCategoryMessage("Kategori gagal dimuat.");
+                            String errorMsg = "Kategori gagal dimuat";
+                            if (response.code() != 200) {
+                                errorMsg += " (HTTP " + response.code() + ")";
+                            }
+                            if (response.body() != null && response.body().message != null) {
+                                errorMsg += ": " + response.body().message;
+                            } else {
+                                try {
+                                    String errBody = response.errorBody() != null ? response.errorBody().string() : null;
+                                    if (errBody != null && !errBody.trim().isEmpty()) {
+                                        errorMsg += ": " + errBody;
+                                    }
+                                } catch (Exception ignored) {}
+                            }
+                            showCategoryMessage(errorMsg);
                             showTechnicianMessage("Teknisi belum bisa dimuat karena kategori gagal dimuat.");
                             return;
                         }
@@ -217,7 +232,7 @@ public class CustomerHomeActivity extends BaseActivity {
 
                     @Override
                     public void onFailure(Call<ApiResponse<List<DeviceCategoryResponse>>> call, Throwable t) {
-                        showCategoryMessage("Tidak bisa terhubung ke server.");
+                        showCategoryMessage("Tidak bisa terhubung ke server: " + t.getMessage());
                         showTechnicianMessage("Teknisi belum bisa dimuat.");
                     }
                 });
@@ -291,7 +306,7 @@ public class CustomerHomeActivity extends BaseActivity {
 
                     @Override
                     public void onFailure(Call<ApiResponse<List<CustomerTechnicianResponse>>> call, Throwable t) {
-                        showTechnicianMessage("Tidak bisa terhubung ke server.");
+                        showTechnicianMessage("Tidak bisa terhubung ke server: " + t.getMessage());
                     }
                 });
     }

@@ -16,6 +16,7 @@ import com.teknisio.mobile.model.response.CustomerTechnicianResponse;
 import com.teknisio.mobile.model.response.DeviceCategoryResponse;
 import com.teknisio.mobile.model.response.ReviewResponse;
 import com.teknisio.mobile.model.response.ServiceRequestResponse;
+import com.teknisio.mobile.model.response.ChatMessageResponse;
 import com.teknisio.mobile.model.response.StatusHistoryResponse;
 import com.teknisio.mobile.view.tracking.TrackingMapActivity;
 
@@ -155,4 +156,18 @@ public interface ApiService {
     Call<ApiResponse<TrackingMapActivity.LocationResponse>> getLastTechnicianLocation(
             @Path("serviceRequestId") String serviceRequestId
     );
+
+    // Chat endpoints
+    @GET("api/chat/{serviceRequestId}")
+    Call<ApiResponse<List<ChatMessageResponse>>> getChatHistory(
+            @Path("serviceRequestId") String serviceRequestId
+    );
+
+    @PATCH("api/chat/{serviceRequestId}/read")
+    Call<ApiResponse<Void>> markChatAsRead(
+            @Path("serviceRequestId") String serviceRequestId
+    );
+
+    @GET("api/chat/unread-count")
+    Call<ApiResponse<Long>> getUnreadCount();
 }

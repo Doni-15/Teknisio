@@ -126,7 +126,10 @@ public class TechnicianHomeActivity extends BaseActivity {
         }
 
         if (navChat != null) {
-            navChat.setOnClickListener(v -> Toast.makeText(this, "Chat teknisi belum tersedia.", Toast.LENGTH_SHORT).show());
+            navChat.setOnClickListener(v -> {
+                Intent intent = new Intent(TechnicianHomeActivity.this, TechnicianHistoryActivity.class);
+                startActivity(intent);
+            });
         }
 
         if (navHistory != null) {

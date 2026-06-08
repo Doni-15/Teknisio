@@ -77,4 +77,42 @@ public final class TextHelper {
 
         return builder.length() == 0 ? fallback : builder.toString();
     }
+
+    public static String formatDateTime(String isoTime) {
+        if (isBlank(isoTime)) {
+            return "-";
+        }
+        try {
+            java.util.Date date = null;
+            String cleanTime = isoTime.trim();
+
+            // Support multiple ISO formats for cross-compatibility
+            String[] formats = {
+                "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+                "yyyy-MM-dd'T'HH:mm:ssXXX",
+                "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+                "yyyy-MM-dd'T'HH:mm:ssZ",
+                "yyyy-MM-dd'T'HH:mm:ss.SSS",
+                "yyyy-MM-dd'T'HH:mm:ss",
+                "yyyy-MM-dd HH:mm:ss"
+            };
+
+            for (String format : formats) {
+                try {
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(format, java.util.Locale.US);
+                    date = sdf.parse(cleanTime);
+                    break;
+                } catch (Exception ignored) {}
+            }
+
+            if (date == null) {
+                return isoTime;
+            }
+
+            java.text.SimpleDateFormat displayFormat = new java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", new java.util.Locale("id", "ID"));
+            return displayFormat.format(date);
+        } catch (Exception e) {
+            return isoTime;
+        }
+    }
 }

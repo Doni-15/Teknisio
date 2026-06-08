@@ -90,6 +90,10 @@ public class TokenManager {
     }
 
 
+    public String getUserId() {
+      return prefs.getString(KEY_USER_ID, null);
+    }
+
     public String getTechnicianProfileId() {
       return prefs.getString(KEY_TECHNICIAN_PROFILE_ID, null);
     }

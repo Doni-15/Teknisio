@@ -25,6 +25,7 @@ import com.teknisio.mobile.util.OrderStatusHelper;
 import com.teknisio.mobile.util.StatusHistoryRenderer;
 import com.teknisio.mobile.util.TextHelper;
 import com.teknisio.mobile.util.ViewHelper;
+import com.teknisio.mobile.view.customer.ChatActivity;
 import com.teknisio.mobile.view.technician.helper.TechnicianRequestActionDialogHelper;
 import com.teknisio.mobile.view.tracking.TrackingMapActivity;
 
@@ -61,6 +62,7 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
     private AppCompatButton btnStartRequest;
     private AppCompatButton btnCompleteRequest;
     private AppCompatButton btnNavigateToCustomer;
+    private AppCompatButton btnTechnicianChat;
 
     private String serviceRequestId;
     private ServiceRequestResponse currentServiceRequest;
@@ -107,6 +109,7 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
         btnStartRequest = findViewById(R.id.btnStartRequest);
         btnCompleteRequest = findViewById(R.id.btnCompleteRequest);
         btnNavigateToCustomer = findViewById(R.id.btnNavigateToCustomer);
+        btnTechnicianChat = findViewById(R.id.btnTechnicianChat);
     }
 
     private void setupActions() {
@@ -118,6 +121,9 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
         btnCompleteRequest.setOnClickListener(v -> showCompleteDialog());
         if (btnNavigateToCustomer != null) {
             btnNavigateToCustomer.setOnClickListener(v -> openNavigationMap());
+        }
+        if (btnTechnicianChat != null) {
+            btnTechnicianChat.setOnClickListener(v -> openChat());
         }
     }
 
@@ -168,7 +174,7 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
         txtTechOrderCode.setText(getSafeText(request.serviceRequestCode, "Request"));
         txtTechOrderStatus.setText(OrderStatusHelper.getDisplayStatus(request.status));
         txtTechOrderStatus.setBackground(makeRounded(OrderStatusHelper.getStatusColor(request.status), 16));
-        txtTechOrderTime.setText("Waktu request: " + getSafeText(request.requestTime, "-"));
+        txtTechOrderTime.setText("Waktu request: " + TextHelper.formatDateTime(request.requestTime));
 
         txtTechCustomer.setText(buildCustomerText(request));
         txtTechCategories.setText(getCategoriesText(request));
@@ -235,11 +241,13 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
                 txtTechDetailMessage.setText("Request sudah diterima. Mulai pengerjaan saat kamu sudah berada di lokasi atau siap bekerja.");
                 btnStartRequest.setVisibility(View.VISIBLE);
                 btnNavigateToCustomer.setVisibility(View.VISIBLE);
+                if (btnTechnicianChat != null) btnTechnicianChat.setVisibility(View.VISIBLE);
                 break;
 
             case "ON_PROGRESS":
                 txtTechDetailMessage.setText("Request sedang dikerjakan. Selesaikan pekerjaan setelah servis benar-benar selesai.");
                 btnCompleteRequest.setVisibility(View.VISIBLE);
+                if (btnTechnicianChat != null) btnTechnicianChat.setVisibility(View.VISIBLE);
                 break;
 
             case "COMPLETED":
@@ -268,6 +276,19 @@ public class TechnicianRequestDetailActivity extends BaseActivity {
         btnStartRequest.setVisibility(View.GONE);
         btnCompleteRequest.setVisibility(View.GONE);
         btnNavigateToCustomer.setVisibility(View.GONE);
+        if (btnTechnicianChat != null) btnTechnicianChat.setVisibility(View.GONE);
+    }
+
+    private void openChat() {
+        if (currentServiceRequest == null) return;
+
+        Intent intent = new Intent(this, ChatActivity.class);
+        intent.putExtra(ChatActivity.EXTRA_SERVICE_REQUEST_ID, currentServiceRequest.serviceRequestId);
+        intent.putExtra(ChatActivity.EXTRA_CHAT_PARTNER_NAME,
+                currentServiceRequest.customerName != null
+                        ? currentServiceRequest.customerName
+                        : "Pelanggan");
+        startActivity(intent);
     }
 
     private void openNavigationMap() {

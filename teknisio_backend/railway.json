@@ -5,7 +5,7 @@
     "buildCommand": "./gradlew clean bootJar -x test"
   },
   "deploy": {
-    "startCommand": "java -Dserver.port=$PORT -jar build/libs/teknisio-backend-0.0.1-SNAPSHOT.jar",
+    "startCommand": "java -Dserver.port=$PORT -Dspring.jpa.hibernate.ddl-auto=update -jar build/libs/teknisio-backend-0.0.1-SNAPSHOT.jar",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }

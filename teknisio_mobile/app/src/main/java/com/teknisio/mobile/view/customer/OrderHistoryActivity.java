@@ -23,6 +23,7 @@ import com.teknisio.mobile.network.ApiClient;
 import com.teknisio.mobile.util.BackButtonHelper;
 import com.teknisio.mobile.util.ErrorParser;
 import com.teknisio.mobile.util.OrderStatusHelper;
+import com.teknisio.mobile.util.TextHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -257,7 +258,7 @@ public class OrderHistoryActivity extends BaseActivity {
         issue.setPadding(0, dp(6), 0, 0);
 
         TextView time = new TextView(this);
-        time.setText(getSafeText(order == null ? null : order.requestTime, ""));
+        time.setText(TextHelper.formatDateTime(order == null ? null : order.requestTime));
         time.setTextColor(Color.parseColor("#8A949B"));
         time.setTextSize(11);
         time.setSingleLine(true);

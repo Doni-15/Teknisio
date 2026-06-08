@@ -105,6 +105,12 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <!-- Chat -->
+        <activity
+            android:name=".view.customer.ChatActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <service
             android:name=".service.LocationSharingService"
             android:exported="false"
