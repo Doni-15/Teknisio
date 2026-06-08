@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.UUID;
+import java.security.Principal;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 /**
  * Handles chat messaging between customer and technician for a service request.
@@ -54,13 +56,23 @@ public class ChatController {
   public void sendChatMessage(
           @DestinationVariable String serviceRequestId,
           @Payload @Valid ChatMessageRequest request,
-          @AuthenticationPrincipal CustomUserDetails userDetails
+          Principal principal
   ) {
-    if (userDetails == null) {
-      log.error("STOMP message rejected: user not authenticated (JWT missing in CONNECT frame?)");
-      throw new IllegalStateException(
-          "User not authenticated — ensure STOMP CONNECT includes Authorization header with Bearer token");
+    if (principal == null) {
+      log.error("STOMP message rejected: principal is null");
+      throw new IllegalStateException("User not authenticated");
     }
+
+    CustomUserDetails userDetails = null;
+    if (principal instanceof UsernamePasswordAuthenticationToken) {
+      userDetails = (CustomUserDetails) ((UsernamePasswordAuthenticationToken) principal).getPrincipal();
+    }
+
+    if (userDetails == null) {
+      log.error("STOMP message rejected: userDetails is null");
+      throw new IllegalStateException("User not authenticated");
+    }
+
     // Override the serviceRequestId from the STOMP path for consistency
     request.setServiceRequestId(serviceRequestId);
     UUID senderId = userDetails.getIdUser();
