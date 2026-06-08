@@ -12,7 +12,6 @@ import com.teknisio.repositories.LokasiTeknisiRepository;
 import com.teknisio.repositories.PermintaanLayananRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -136,7 +135,6 @@ public class LocationService {
     }
   }
 
-  @Async
   protected void persistAsync(String serviceRequestId, double latitude, double longitude) {
     try {
       UUID id = UUID.fromString(serviceRequestId);
