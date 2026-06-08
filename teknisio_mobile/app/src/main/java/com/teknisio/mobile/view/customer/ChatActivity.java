@@ -110,6 +110,13 @@ public class ChatActivity extends BaseActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        // Always reload history when returning to this screen
+        loadChatHistory();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         disconnectChatWebSocket();
@@ -222,9 +229,31 @@ public class ChatActivity extends BaseActivity {
             ChatMessageResponse msg = gson.fromJson(json, ChatMessageResponse.class);
             if (msg != null && !isBlank(msg.message)) {
                 runOnUiThread(() -> {
-                    messages.add(msg);
-                    addMessageBubble(msg);
-                    scrollToBottom();
+                    // Don't add if it's our own message (already shown via optimistic UI)
+                    boolean isOwnMessage = currentUserId != null && currentUserId.equals(msg.senderId)
+                            && msg.chatId == null;
+                    if (!isOwnMessage) {
+                        // Also skip if already exists (e.g., relayed back by server after DB save)
+                        boolean alreadyExists = false;
+                        if (msg.chatId != null) {
+                            for (ChatMessageResponse existing : messages) {
+                                if (msg.chatId.equals(existing.chatId)) {
+                                    alreadyExists = true;
+                                    // Update the optimistic entry with the real chatId
+                                    if (existing.chatId == null) {
+                                        existing.chatId = msg.chatId;
+                                        existing.sentAt = msg.sentAt;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        if (!alreadyExists) {
+                            messages.add(msg);
+                            addMessageBubble(msg);
+                            scrollToBottom();
+                        }
+                    }
                 });
             }
         } catch (Exception e) {

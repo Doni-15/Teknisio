@@ -45,9 +45,17 @@ public class ChatService {
             .orElseThrow(() -> new IllegalArgumentException("Sender not found"));
 
     // Determine receiver: if sender is the customer, receiver = technician; vice versa
-    User receiver = permintaan.getPengguna().getIdUser().equals(senderUserId)
-            ? permintaan.getTeknisiProfile().getUser()
-            : permintaan.getPengguna();
+    User receiver;
+    if (permintaan.getPengguna().getIdUser().equals(senderUserId)) {
+      // Sender is customer → receiver is technician
+      if (permintaan.getTeknisiProfile() == null || permintaan.getTeknisiProfile().getUser() == null) {
+        throw new IllegalArgumentException("Technician has not been assigned to this service request yet");
+      }
+      receiver = permintaan.getTeknisiProfile().getUser();
+    } else {
+      // Sender is technician → receiver is customer
+      receiver = permintaan.getPengguna();
+    }
 
     ChatMessage chat = ChatMessage.builder()
             .permintaanLayanan(permintaan)
