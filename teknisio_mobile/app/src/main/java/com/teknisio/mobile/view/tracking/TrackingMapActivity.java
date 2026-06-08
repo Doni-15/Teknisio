@@ -575,7 +575,7 @@ public class TrackingMapActivity extends BaseActivity {
                 .replace("https://", "wss://")
                 .replace("http://", "ws://");
         if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
-        return base + "/ws/websocket";
+        return base + "/ws/";
     }
 
     // ─────────────────────────────────────────────────────────────────────────

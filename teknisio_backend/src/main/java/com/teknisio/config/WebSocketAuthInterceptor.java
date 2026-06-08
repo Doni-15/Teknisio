@@ -48,6 +48,9 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         // Only authenticate on CONNECT frames
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             String authHeader = accessor.getFirstNativeHeader(AUTH_HEADER);
+            if (authHeader != null) {
+                authHeader = authHeader.trim();
+            }
 
             if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
                 String token = authHeader.substring(BEARER_PREFIX.length());

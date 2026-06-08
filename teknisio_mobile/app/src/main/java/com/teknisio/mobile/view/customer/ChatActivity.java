@@ -184,7 +184,7 @@ public class ChatActivity extends BaseActivity {
             public void onOpen(WebSocket webSocket, Response response) {
                 // STOMP CONNECT with JWT token for authentication
                 String stompToken = (token != null && !token.isBlank()) ? token : "";
-                String connectFrame = "CONNECT\naccept-version:1.2\nheart-beat:10000,10000\nAuthorization:Bearer " + stompToken + "\n\n\u0000";
+                String connectFrame = "CONNECT\naccept-version:1.2\nheart-beat:10000,10000\nAuthorization: Bearer " + stompToken + "\n\n\u0000";
                 webSocket.send(connectFrame);
             }
 
@@ -451,7 +451,7 @@ public class ChatActivity extends BaseActivity {
                 .replace("https://", "wss://")
                 .replace("http://", "ws://");
         if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
-        return base + "/ws/websocket";
+        return base + "/ws/";
     }
 
     private String formatTime(String isoTime) {
