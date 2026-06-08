@@ -191,7 +191,21 @@ public class CustomerHomeActivity extends BaseActivity {
                             Response<ApiResponse<List<DeviceCategoryResponse>>> response
                     ) {
                         if (!response.isSuccessful() || response.body() == null || !response.body().success) {
-                            showCategoryMessage("Kategori gagal dimuat.");
+                            String errorMsg = "Kategori gagal dimuat";
+                            if (response.code() != 200) {
+                                errorMsg += " (HTTP " + response.code() + ")";
+                            }
+                            if (response.body() != null && response.body().message != null) {
+                                errorMsg += ": " + response.body().message;
+                            } else {
+                                try {
+                                    String errBody = response.errorBody() != null ? response.errorBody().string() : null;
+                                    if (errBody != null && !errBody.trim().isEmpty()) {
+                                        errorMsg += ": " + errBody;
+                                    }
+                                } catch (Exception ignored) {}
+                            }
+                            showCategoryMessage(errorMsg);
                             showTechnicianMessage("Teknisi belum bisa dimuat karena kategori gagal dimuat.");
                             return;
                         }

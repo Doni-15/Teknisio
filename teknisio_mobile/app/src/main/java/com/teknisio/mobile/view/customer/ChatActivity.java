@@ -323,11 +323,18 @@ public class ChatActivity extends BaseActivity {
                         loadingHistory = false;
                         if (response.isSuccessful()
                                 && response.body() != null
-                                && response.body().success
-                                && response.body().data != null) {
+                                && response.body().success) {
                             messages.clear();
-                            messages.addAll(response.body().data);
+                            if (response.body().data != null) {
+                                messages.addAll(response.body().data);
+                            }
                             renderMessages();
+                        } else {
+                            String err = "Gagal memuat riwayat chat";
+                            if (response.code() != 200) {
+                                err += " (HTTP " + response.code() + ")";
+                            }
+                            AppToast.error(ChatActivity.this, err);
                         }
                         // Mark messages as read
                         markMessagesAsRead();
@@ -336,6 +343,7 @@ public class ChatActivity extends BaseActivity {
                     @Override
                     public void onFailure(Call<ApiResponse<List<ChatMessageResponse>>> call, Throwable t) {
                         loadingHistory = false;
+                        AppToast.error(ChatActivity.this, "Koneksi gagal: Gagal memuat riwayat chat.");
                     }
                 });
     }
