@@ -72,6 +72,7 @@ public class ServiceRequestDetailActivity extends BaseActivity {
 
     private String serviceRequestId;
     private ServiceRequestResponse currentOrder;
+    private String loadedTechnicianName = null;  // cached from technician detail API
     private boolean loading = false;
     private boolean cancelling = false;
     private boolean hasReview = false;
@@ -275,7 +276,9 @@ public class ServiceRequestDetailActivity extends BaseActivity {
             return;
         }
 
-        txtOrderTechnicianName.setText(getSafeText(technician.name, "Teknisi"));
+        String name = getSafeText(technician.name, "Teknisi");
+        loadedTechnicianName = name;  // cache for TrackingMapActivity
+        txtOrderTechnicianName.setText(name);
 
         String ratingText = formatRating(technician.averageRating);
         String jobsText = technician.totalJobs == null ? "0" : String.valueOf(technician.totalJobs);
@@ -364,8 +367,12 @@ public class ServiceRequestDetailActivity extends BaseActivity {
         Intent intent = new Intent(this, TrackingMapActivity.class);
         intent.putExtra(TrackingMapActivity.EXTRA_MODE, TrackingMapActivity.MODE_CUSTOMER);
         intent.putExtra(TrackingMapActivity.EXTRA_SERVICE_REQUEST_ID, currentOrder.serviceRequestId);
-        intent.putExtra(TrackingMapActivity.EXTRA_TECHNICIAN_NAME,
-                currentOrder.customerName != null ? currentOrder.customerName : "Teknisi");
+
+        // Use the cached technician name fetched from the detail API
+        String techName = (loadedTechnicianName != null && !loadedTechnicianName.isBlank())
+                ? loadedTechnicianName
+                : "Teknisi";
+        intent.putExtra(TrackingMapActivity.EXTRA_TECHNICIAN_NAME, techName);
 
         // Customer's service location coordinates (stored in the order)
         double lat = (currentOrder.latitude != null) ? currentOrder.latitude.doubleValue() : 0.0;

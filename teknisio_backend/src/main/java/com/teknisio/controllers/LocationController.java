@@ -1,144 +1,96 @@
 package com.teknisio.controllers;
 
-import com.teknisio.common.exception.BadRequestException;
-import com.teknisio.common.exception.ResourceNotFoundException;
 import com.teknisio.common.response.ApiResponse;
-import com.teknisio.dto.location.LocationUpdateMessage;
-import com.teknisio.model.entities.PermintaanLayanan;
-import com.teknisio.model.enums.RequestStatus;
-import com.teknisio.repositories.PermintaanLayananRepository;
-import com.teknisio.security.CurrentUserService;
+import com.teknisio.dto.requests.LocationUpdateRequest;
+import com.teknisio.dto.responses.LocationResponse;
 import com.teknisio.services.LocationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.security.Principal;
-import java.util.UUID;
-
 /**
- * Handles real-time GPS location sharing between technicians and customers.
+ * Handles GPS location sharing between technician and customer.
  *
- * <p><b>WebSocket flow (via STOMP):</b>
- * <ol>
- *   <li>Technician sends location to {@code /app/location/update/{serviceRequestId}}</li>
- *   <li>Server stores it in-memory and forwards to {@code /topic/location/{serviceRequestId}}</li>
- *   <li>Customer (subscribed to the topic) receives the update in real-time</li>
- * </ol>
- * </p>
+ * <p><b>WebSocket / STOMP path (technician → server):</b><br>
+ * {@code /app/location/update/{serviceRequestId}}
  *
- * <p><b>REST fallback:</b>
- * {@code GET /api/location/{serviceRequestId}} returns the last known location for polling.
- * </p>
+ * <p><b>Broker topic (server → customer subscribers):</b><br>
+ * {@code /topic/location/{serviceRequestId}}
+ *
+ * <p><b>REST polling fallback (customer → server):</b><br>
+ * {@code GET /api/location/{serviceRequestId}}
  */
+@Slf4j
+@Controller
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/location")
 public class LocationController {
 
-    private static final String LOCATION_TOPIC = "/topic/location/";
+  private final LocationService locationService;
 
-    private final SimpMessagingTemplate messagingTemplate;
-    private final LocationService locationService;
-    private final PermintaanLayananRepository permintaanLayananRepository;
-    private final CurrentUserService currentUserService;
+  // ─────────────────────────────────────────────────────────────────────────
+  // STOMP — technician pushes location
+  // ─────────────────────────────────────────────────────────────────────────
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // WebSocket — Technician sends location
-    // ─────────────────────────────────────────────────────────────────────────
+  /**
+   * Receives a GPS location update from the technician via STOMP.
+   * Stores it in the cache and broadcasts it to {@code /topic/location/{serviceRequestId}}.
+   *
+   * <p>Android sends a STOMP SEND frame to {@code /app/location/update/{serviceRequestId}}
+   * with a JSON body like:
+   * <pre>
+   * {
+   *   "serviceRequestId": "uuid",
+   *   "latitude": -6.200000,
+   *   "longitude": 106.816666,
+   *   "timestamp": 1717000000000
+   * }
+   * </pre>
+   */
+  @MessageMapping("/location/update/{serviceRequestId}")
+  public void receiveLocationUpdate(
+    @DestinationVariable String serviceRequestId,
+    @Payload LocationUpdateRequest request
+  ) {
+    log.debug("STOMP location update received for {}: {},{}", serviceRequestId, request.latitude, request.longitude);
+    request.serviceRequestId = serviceRequestId; // ensure consistency
+    locationService.updateAndBroadcast(serviceRequestId, request);
+  }
 
-    /**
-     * Technician sends their GPS coordinates here.
-     * The message is stored in memory and broadcast to all subscribers on the matching topic.
-     *
-     * @param serviceRequestId the service request UUID string
-     * @param message          the location payload from the technician
-     * @param principal        the authenticated WebSocket user (technician)
-     */
-    @MessageMapping("/location/update/{serviceRequestId}")
-    public void receiveLocation(
-            @DestinationVariable String serviceRequestId,
-            @Payload LocationUpdateMessage message,
-            Principal principal
-    ) {
-        // Ensure the message has the correct service request ID from the path variable
-        message.setServiceRequestId(serviceRequestId);
+  // ─────────────────────────────────────────────────────────────────────────
+  // REST — customer polls last known location (WebSocket fallback)
+  // ─────────────────────────────────────────────────────────────────────────
 
-        // Persist in-memory cache
-        locationService.updateLocation(message);
+  /**
+   * Returns the last known GPS location of the technician for the given
+   * service request. Used as a polling fallback when WebSocket is unavailable.
+   *
+   * @param serviceRequestId UUID of the service request
+   * @return last location or 404 if not yet received
+   */
+  @GetMapping("/{serviceRequestId}")
+  public ResponseEntity<ApiResponse<LocationResponse>> getLastLocation(
+    @PathVariable String serviceRequestId
+  ) {
+    LocationResponse location = locationService.getLastLocation(serviceRequestId);
 
-        // Broadcast to customer subscribers
-        messagingTemplate.convertAndSend(LOCATION_TOPIC + serviceRequestId, message);
+    if (location == null) {
+      return ResponseEntity.ok(
+        new ApiResponse<>(false, "Lokasi teknisi belum tersedia", null, null)
+      );
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // REST — Polling fallback: get last known location
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Returns the last known GPS location for a service request.
-     * Used as a polling fallback when WebSocket is not available.
-     *
-     * <p>Both the customer and the technician involved in this service request
-     * are authorized to call this endpoint.</p>
-     *
-     * @param serviceRequestId the UUID string of the service request
-     * @return the last known location, or 404 if not yet available
-     */
-    @GetMapping("/{serviceRequestId}")
-    public ResponseEntity<ApiResponse<LocationUpdateMessage>> getLastLocation(
-            @PathVariable String serviceRequestId
-    ) {
-        UUID id = parseId(serviceRequestId);
-        UUID currentUserId = currentUserService.getCurrentUserId();
-
-        PermintaanLayanan order = permintaanLayananRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Service request not found"));
-
-        // Authorization: only the customer or the assigned technician can view this
-        boolean isCustomer = order.getPengguna() != null
-                && currentUserId.equals(order.getPengguna().getIdUser());
-        boolean isTechnician = order.getTeknisiProfile() != null
-                && order.getTeknisiProfile().getUser() != null
-                && currentUserId.equals(order.getTeknisiProfile().getUser().getIdUser());
-
-        if (!isCustomer && !isTechnician) {
-            throw new ResourceNotFoundException("Service request not found");
-        }
-
-        // Only expose live location for ACCEPTED (on the way) orders
-        if (order.getStatus() != RequestStatus.ACCEPTED) {
-            throw new BadRequestException("Location tracking is only available for orders with ACCEPTED status");
-        }
-
-        LocationUpdateMessage location = locationService.getLastLocation(serviceRequestId);
-
-        if (location == null) {
-            throw new ResourceNotFoundException("Technician location not yet available");
-        }
-
-        return ResponseEntity.ok(ApiResponse.success("Location retrieved successfully", location));
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Helpers
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private UUID parseId(String id) {
-        if (id == null || id.isBlank()) {
-            throw new BadRequestException("Service request id is required");
-        }
-        try {
-            return UUID.fromString(id);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid service request id");
-        }
-    }
+    return ResponseEntity.ok(
+      ApiResponse.success("Lokasi teknisi berhasil diambil", location)
+    );
+  }
 }
