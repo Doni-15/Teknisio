@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -97,6 +98,10 @@ public class LocationSharingService extends Service {
             authToken = intent.getStringExtra(EXTRA_TOKEN);
         }
 
+        if (authToken == null || authToken.isBlank()) {
+            authToken = new TokenManager(this).getAccessToken();
+        }
+
         if (serviceRequestId == null || serviceRequestId.isBlank()) {
             Log.e(TAG, "No service request id — stopping service");
             stopSelf();
@@ -140,8 +145,9 @@ public class LocationSharingService extends Service {
             @Override
             public void onOpen(WebSocket webSocket, Response response) {
                 Log.d(TAG, "WebSocket opened");
-                // Send STOMP CONNECT frame
-                webSocket.send(STOMP_CONNECT + "\n\u0000");
+                // Send STOMP CONNECT frame with JWT token for backend WebSocket authentication
+                String stompToken = (authToken != null && !authToken.isBlank()) ? authToken : "";
+                webSocket.send(STOMP_CONNECT + "Authorization: Bearer " + stompToken + "\n\n\u0000");
             }
 
             @Override
@@ -311,7 +317,12 @@ public class LocationSharingService extends Service {
         Intent intent = new Intent(context, LocationSharingService.class);
         intent.putExtra(EXTRA_SERVICE_REQUEST_ID, serviceRequestId);
         intent.putExtra(EXTRA_TOKEN, authToken);
-        context.startForegroundService(intent);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent);
+        } else {
+            context.startService(intent);
+        }
     }
 
     public static void stop(Context context) {

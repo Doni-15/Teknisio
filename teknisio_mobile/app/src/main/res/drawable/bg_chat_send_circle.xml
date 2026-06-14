@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Tidak aktif / pesan kosong -->
+    <item android:state_enabled="false">
+        <shape android:shape="oval">
+            <solid android:color="#C8D2DC" />
+        </shape>
+    </item>
+
+    <!-- Aktif / ada teks -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#2F4A8A" />
+        </shape>
+    </item>
+
+</selector>

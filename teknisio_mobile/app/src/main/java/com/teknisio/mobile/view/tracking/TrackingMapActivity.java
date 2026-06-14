@@ -29,6 +29,7 @@ import com.teknisio.mobile.R;
 import com.teknisio.mobile.base.BaseActivity;
 import com.teknisio.mobile.local.TokenManager;
 import com.teknisio.mobile.model.response.ApiResponse;
+import com.teknisio.mobile.model.response.LocationResponse;
 import com.teknisio.mobile.network.ApiClient;
 import com.teknisio.mobile.service.LocationSharingService;
 import com.teknisio.mobile.util.AppToast;
@@ -169,9 +170,9 @@ public class TrackingMapActivity extends BaseActivity {
         disconnectSubscriberWebSocket();
         unregisterLocationReceiver();
 
-        if (MODE_TECHNICIAN.equals(mode)) {
-            LocationSharingService.stop(this);
-        }
+        // Jangan stop LocationSharingService saat teknisi keluar dari halaman map.
+        // Live GPS harus tetap berjalan lewat foreground service agar customer tetap bisa melacak.
+        // Stop service sebaiknya dilakukan saat request selesai/cancel, bukan saat Activity destroy.
 
         if (mapView != null) {
             mapView.onDetach();
@@ -293,8 +294,13 @@ public class TrackingMapActivity extends BaseActivity {
 
             @Override
             public void onOpen(WebSocket webSocket, Response response) {
-                // STOMP CONNECT
-                webSocket.send("CONNECT\naccept-version:1.2\nheart-beat:10000,10000\n\n\u0000");
+                // STOMP CONNECT with JWT token for backend WebSocket authentication
+                String stompToken = (token != null && !token.isBlank()) ? token : "";
+                String connectFrame = "CONNECT\n"
+                        + "accept-version:1.2\n"
+                        + "heart-beat:10000,10000\n"
+                        + "Authorization: Bearer " + stompToken + "\n\n\u0000";
+                webSocket.send(connectFrame);
             }
 
             @Override
@@ -575,17 +581,10 @@ public class TrackingMapActivity extends BaseActivity {
                 .replace("https://", "wss://")
                 .replace("http://", "ws://");
         if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
-        return base + "/ws";
+        return base + "/ws/websocket";
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Simple DTO for polling response
     // ─────────────────────────────────────────────────────────────────────────
-
-    public static class LocationResponse {
-        public String serviceRequestId;
-        public double latitude;
-        public double longitude;
-        public String timestamp;
-    }
 }
