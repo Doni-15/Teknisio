@@ -2,13 +2,21 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+val releaseApiBaseUrl = providers.gradleProperty("TEKNISIO_API_BASE_URL")
+    .orElse("https://api.example.invalid/")
+    .get()
+
+require(releaseApiBaseUrl.startsWith("https://")) {
+    "TEKNISIO_API_BASE_URL untuk release wajib menggunakan HTTPS"
+}
+
+val debugApiBaseUrl = providers.gradleProperty("TEKNISIO_DEBUG_API_BASE_URL")
+    .orElse("http://10.0.2.2:8080/")
+    .get()
+
 android {
     namespace = "com.teknisio.mobile"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.teknisio.mobile"
@@ -21,8 +29,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", "\"$debugApiBaseUrl\"")
+        }
         release {
             isMinifyEnabled = false
+            buildConfigField("String", "API_BASE_URL", "\"$releaseApiBaseUrl\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -32,6 +44,9 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+    buildFeatures {
+        buildConfig = true
     }
 }
 

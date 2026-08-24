@@ -33,6 +33,8 @@ dependencies {
 
     // Security
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("com.bucket4j:bucket4j_jdk17-core:8.19.0")
+    implementation("com.github.ben-manes.caffeine:caffeine")
 
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")

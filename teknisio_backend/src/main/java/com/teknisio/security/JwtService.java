@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.UUID;
@@ -21,6 +22,13 @@ public class JwtService {
 
   @Value("${app.jwt.expiration-ms}")
   private long accessTokenExpirationMs;
+
+  @PostConstruct
+  void validateConfiguration() {
+    if (jwtSecret == null || jwtSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
+      throw new IllegalStateException("JWT_SECRET must be configured with at least 32 bytes");
+    }
+  }
 
   public String generateAccessToken(User user) {
     Date now = new Date();
@@ -63,10 +71,6 @@ public class JwtService {
 
   private SecretKey getSigningKey() {
     byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
-
-    if (keyBytes.length < 32) {
-      throw new IllegalStateException("JWT_SECRET must be at least 32 characters");
-    }
 
     return Keys.hmacShaKeyFor(keyBytes);
   }

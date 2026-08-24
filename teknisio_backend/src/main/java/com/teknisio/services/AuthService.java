@@ -104,7 +104,7 @@ public class AuthService {
     }
 
     if (user.getStatusAkun() != UserStatus.ACTIVE) {
-      throw new UnauthorizedException("Account is not active");
+      throw new UnauthorizedException("Invalid email or password");
     }
 
     user.setLastLogin(OffsetDateTime.now());
