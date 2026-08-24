@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 
-const WebSocket = require("ws");
-
 const BASE_URL = process.env.BASE_URL || "http://localhost:8080";
 const WS_URL = process.env.WS_URL || "ws://localhost:8080/ws/websocket";
 const RUN_ID = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
-const PASSWORD = "password123";
+const PASSWORD = process.env.TEKNISIO_TEST_PASSWORD;
+
+if (!PASSWORD || PASSWORD.length < 12) {
+  console.error("TEKNISIO_TEST_PASSWORD wajib diisi minimal 12 karakter untuk fixture sementara.");
+  process.exit(2);
+}
+
+const WebSocket = require("ws");
 
 let passed = 0;
 let failed = 0;

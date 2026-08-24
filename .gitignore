@@ -1,0 +1,12 @@
+# Release and crash artifacts
+*.apk
+*.log
+*.hprof
+*.bak.*
+
+# Local tool state
+**/.idea/
+**/.vscode/
+**/local.properties
+.DS_Store
+Thumbs.db

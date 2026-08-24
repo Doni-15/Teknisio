@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-teknisio_db}
       POSTGRES_USER: ${POSTGRES_USER:-teknisio_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-teknisio_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
     volumes:
